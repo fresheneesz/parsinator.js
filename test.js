@@ -1,0 +1,10 @@
+const {createParserTests, runTests} = require("./test/testUtils")
+const coreTests = require("./test/core.test")
+const parserTests = createParserTests(require("./test/parsers.test"))
+const lazyTests = createParserTests(require("./test/lazy.test"))
+const fileInfoCacheTests = require("./test/fileInfoCache.test.js")
+
+// runTests(coreTests.concat(parserTests).concat(lazyTests).concat(fileInfoCacheTests))
+// runTests(coreTests)
+// runTests(lazyTests)
+runTests(parserTests)

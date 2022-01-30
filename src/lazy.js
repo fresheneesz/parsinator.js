@@ -1,0 +1,36 @@
+const {Parser} = require("./core")
+
+// Turns a parser combinator into a lazy form where the function is called only when needed.
+// This also allows accessing the current Context (including the state).
+// parserCombinator - A function that returns a Parser. Will receive the same arguments the return value of lazy is called with.
+//                    Will also get a Context object as its `this`.
+function lazy(parserCombinator) {
+  return function() {
+    const args = arguments
+    return Parser(function() {
+      return parserCombinator.apply(this, args).parse(this)
+    })
+  }
+}
+
+// Wraps each parser function so that it can properly recurse a
+function lazyParsers(parserMap) {
+  var wrappedParsers = {}
+  for(const name in parserMap) {
+    wrappedParsers[name] = lazy(parserMap[name])
+  }
+  return wrappedParsers
+}
+
+function importParsers(parsersObject, parserObjectName, declarator) {
+  if(declarator === undefined) declarator = 'var'
+
+  var definitions = []
+  for(const name in parsersObject) {
+    definitions.push(name+' = '+parserObjectName+'["'+name+'"]')
+  }
+  return declarator+' '+definitions.join(', ')
+
+}
+
+module.exports = {lazy, lazyParsers, importParsers}
