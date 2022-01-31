@@ -106,7 +106,7 @@ exports.ser = function(...parsers) {
     let curContext = this, lastResult;
     for(let n=0; n<parsers.length; n++) {
       const parser = parsers[n]
-      const result = parser.parse(curContext)
+      const result = this.parse(parser, curContext)
       if(result.ok) {
         if(labels.length === 0) {
           results.push(result.value)
@@ -132,7 +132,7 @@ exports.alt = function(...parsers) {
     let expected = new Set, furthest = this.index
     for(let n=0; n<parsers.length; n++) {
       const parser = parsers[n]
-      const result = parser.parse(this.copy())
+      const result = this.parse(parser, this)
       if(result.ok) {
         return result
       } else {
@@ -187,7 +187,7 @@ function _timesInternal(
     const results = []
     let curContext = this, lastResult
     for(let n=0; n<maxParses; n++) {
-      const result = parser.parse(curContext)
+      const result = this.parse(parser, curContext)
       if(result.ok) {
         results.push(result.value)
         lastResult = result
@@ -211,7 +211,7 @@ function _timesInternal(
 // Doesn't return a value and doesn't advance the index.
 exports.not = function(parser) {
   return Parser('not', function() {
-    const result = parser.parse(this)
+    const result = this.parse(parser, this)
     if(result.ok) {
       return this.fail(this.index, ['not '+this.input.slice(this.index, result.index)])
     } else {
@@ -223,7 +223,7 @@ exports.not = function(parser) {
 // Returns a parser that consumes no input and fails with an expectation or whatever.
 exports.peek = function(parser) {
   return Parser('peek', function() {
-    const result = parser.parse(this)
+    const result = this.parse(parser, this)
     if(result.ok) {
       return this.ok(this.index, result.value)
     } else {

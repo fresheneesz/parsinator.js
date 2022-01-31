@@ -15,6 +15,7 @@ const Context = proto(function() {
     ;[this.input, // The string source being parsed.
       this.index, // The current index the parser is at in the input.
       this._state,  // A Map of named values set by parsers.
+      this.debug // If true, the context creates debug records.
     ] = arguments
 
     if(this._state === undefined) {
@@ -27,7 +28,11 @@ const Context = proto(function() {
     if(index < this.index) {
       throw new Error("Parser attempted to move an index backward to index: "+index+" from index"+this.index+".")
     }
-    return Context(this.input, index, new Map(this._state))
+    const newContext = Context(this.input, index, new Map(this._state), this.debug)
+    if(this.debug) {
+      newContext.debugRecord = this.debugRecord
+    }
+    return newContext
   }
 
   // Returns a copy of the context.
@@ -65,6 +70,41 @@ const Context = proto(function() {
   this.set = function(key, value) {
     this._state.set(key, value)
   }
+
+  // Runs a sub parser (a parser that is "part of" or a child parser of the parser this context came from).
+  // parser - The parser to continue parsing with.
+  // curContext - The context to continue parsing from.
+  this.parse = function(parser, curContext) {
+    if(this === curContext) {
+      curContext = this.copy()
+    }
+    if(curContext.debug) {
+      if(this.curDebugSection.subRecords === undefined) {
+        this.curDebugSection.subRecords = []
+      }
+      curContext.debugRecord = this.debugRecord
+      curContext.curDebugSection = {}
+      this.curDebugSection.subRecords.push(curContext.curDebugSection)
+    }
+    return parser.parse(curContext)
+  }
+
+  // Initializes a new debug record.
+  this.initDebug = function() {
+    const newRecord = {}
+    this.debugRecord = newRecord
+    this.curDebugSection = newRecord
+    this.debug = true
+  }
+
+  this.addDebugParseInit = function(name, startIndex) {
+    this.curDebugSection.name = name
+    this.curDebugSection.startIndex = startIndex
+  }
+
+  this.addDebugResult = function(result) {
+    this.curDebugSection.result = result
+  }
 })
 
 const Parser = proto(function() {
@@ -92,9 +132,18 @@ const Parser = proto(function() {
     } else {
       const input = arguments[0]
       context = Context(input, /*index */ 0)
+      if(this.shouldDebug) {
+        context.initDebug()
+      }
     }
 
+    if(context.debug) {
+      context.addDebugParseInit(this.name, context.index)
+    }
     const result = this.action.apply(context)
+    if(context.debug) {
+      context.addDebugResult(result)
+    }
 
     let curResult = result
     for(let n=0; n<this.chainContinuations.length; n++) {
@@ -115,6 +164,13 @@ const Parser = proto(function() {
   // continuation(value) - Should return a Parser.
   this.chain = function(continuation) {
     return Parser(this.name+' chain', this.action, this.chainContinuations.concat(continuation))
+  }
+
+  // Sets whether or not this Parser is in debug mode.
+  this.debug = function(shouldDebug) {
+    if(shouldDebug === undefined) shouldDebug = true
+    this.shouldDebug = shouldDebug
+    return this
   }
 })
 

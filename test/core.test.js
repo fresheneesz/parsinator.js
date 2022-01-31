@@ -106,6 +106,62 @@ module.exports = [
     "Argument passed to parse is neither a string nor a Context object."
   },
 
+  {name: 'debugger: basic output', run: function(){
+    var parser = Parser('parser', function() {
+      return this.ok(2, 'resultValue')
+    })
+    return parser.debug().parse('ignored').context.debugRecord
+  }, result: {
+    name: 'parser', startIndex: 0, result: {ok: true, context:{index:2}, value: 'resultValue'}
+  }},
+
+  {name: 'debugger: fail output', run: function(){
+    var parser = Parser('parser', function() {
+      return this.fail(1, ['x','y','z'])
+    })
+    return parser.debug().parse('ignored').context.debugRecord
+  }, result: {
+    name: 'parser', startIndex: 0, result: {ok: false, context:{index:1}, expected: new Set(['x','y','z'])}
+  }},
+
+  {name: 'debugger: output for alternatives', run: function(){
+    var x = Parser('x', function() {
+      return this.fail(0, ['x'])
+    })
+    var y = Parser('y', function() {
+      return this.ok(1, 'y')
+    })
+    var parser = Parser('parser', function() {
+      this.parse(x, this)
+      return this.parse(y, this)
+    })
+    return parser.debug().parse('ignored').context.debugRecord
+  }, result: {
+    name: 'parser', startIndex: 0, result: {ok: true, context:{index:1}, value: 'y'}, subRecords: [
+      {name: 'x', startIndex: 0, result: {ok: false, context:{index:0}, expected: new Set(['x'])}},
+      {name: 'y', startIndex: 0, result: {ok: true, context:{index:1}, value: 'y'}}
+    ]
+  }},
+
+  {name: 'debugger: output for series', run: function(){
+    var x = Parser('x', function() {
+      return this.ok(1, 'x')
+    })
+    var y = Parser('y', function() {
+      return this.ok(2, 'y')
+    })
+    var parser = Parser('parser', function() {
+      const xResult = this.parse(x, this)
+      return this.parse(y, xResult.context)
+    })
+    return parser.debug().parse('ignored').context.debugRecord
+  }, result: {
+    name: 'parser', startIndex: 0, result: {ok: true, context:{index:2}, value: 'y'}, subRecords: [
+      {name: 'x', startIndex: 0, result: {ok: true, context:{index:1}, value: 'x'}},
+      {name: 'y', startIndex: 1, result: {ok: true, context:{index:2}, value: 'y'}}
+    ]
+  }},
+
   //*/
 ]
 

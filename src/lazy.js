@@ -12,7 +12,7 @@ function lazy(name, parserCombinator) {
   return function() {
     const args = arguments
     return Parser(name, function() {
-      return parserCombinator.apply(this, args).parse(this)
+      return this.parse(parserCombinator.apply(this, args), this)
     })
   }
 }

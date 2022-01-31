@@ -9,10 +9,10 @@ const wrappedParserB = lazy('wrappedParserB', function(arg1) {
 })
 
 const wrappedParsers = lazyParsers({
-  recursiveParserA: () => {
+  recursiveParserA: function() {
     return ser(str('a'), recursiveParserB())
   },
-  recursiveParserB: () => {
+  recursiveParserB: function() {
     return ser(str('b'), alt(recursiveParserA(), eof()))
   }
 })
