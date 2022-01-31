@@ -2,12 +2,16 @@ const {Parser} = require("./core")
 
 // Turns a parser combinator into a lazy form where the function is called only when needed.
 // This also allows accessing the current Context (including the state).
+// name - A name for the parser (used for debug purposes).
 // parserCombinator - A function that returns a Parser. Will receive the same arguments the return value of lazy is called with.
 //                    Will also get a Context object as its `this`.
-function lazy(parserCombinator) {
+function lazy(name, parserCombinator) {
+  if(!(parserCombinator instanceof Function)) {
+    throw new Error("Something other than a function passed as the second argument to `lazy`.")
+  }
   return function() {
     const args = arguments
-    return Parser(function() {
+    return Parser(name, function() {
       return parserCombinator.apply(this, args).parse(this)
     })
   }
@@ -17,7 +21,7 @@ function lazy(parserCombinator) {
 function lazyParsers(parserMap) {
   var wrappedParsers = {}
   for(const name in parserMap) {
-    wrappedParsers[name] = lazy(parserMap[name])
+    wrappedParsers[name] = lazy(name, parserMap[name])
   }
   return wrappedParsers
 }

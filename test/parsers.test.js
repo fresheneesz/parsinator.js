@@ -23,12 +23,12 @@ function lang() {
 }
 
 function modifyState() {
-  return Parser(function() {
+  return Parser('modifyState', function() {
     this.set('a', 'x') // The state is being set even tho this is returning a fail. This should never be done.
     return this.fail(0, 'something else')
   })
 }
-const parseBasedOnState = lazy(function() {
+const parseBasedOnState = lazy('parseBasedOnState', function() {
   if(this.get('a')) {
     return str(this.get('a'))
   } else {
@@ -57,7 +57,7 @@ module.exports = [
     ok: true
   }},
   {name: 'eof failure', parser: eof(), input: "nonempty", result: {
-    ok: false, expected: ["EOF"]
+    ok: false, expected: new Set(["EOF"])
   }},
 
   // ok
@@ -67,7 +67,7 @@ module.exports = [
 
   // fail
   {name: 'fail', parser: fail(['expectedValue']), input: "nonempty", result: {
-    ok: false, expected: ['expectedValue']
+    ok: false, expected: new Set(['expectedValue'])
   }},
 
   // str
@@ -75,7 +75,7 @@ module.exports = [
     ok: true, value: "a"
   }},
   {name: 'str fail', parser: str('a'), input: "b", result: {
-    ok: false, expected: ["a"]
+    ok: false, expected: new Set(["a"])
   }},
 
   // str
@@ -83,7 +83,7 @@ module.exports = [
     ok: true, value: "aaaaaaa"
   }},
   {name: 'match fail', parser: match(/a+/), input: "b", result: {
-    ok: false, expected: ["/a+/"]
+    ok: false, expected: new Set(["/a+/"])
   }},
 
   // ser
@@ -94,20 +94,20 @@ module.exports = [
     ok: true, value: {a: 'a', c:'c'}
   }},
   {name: 'ser fail start', parser: ser(str('a'),str('b'),str('c')), input: "bbd", result: {
-    ok: false, expected: ["a"]
+    ok: false, expected: new Set(["a"])
   }},
   {name: 'ser fail repeat', parser: ser(str('a'),str('b'),str('c')), input: "aaa", result: {
-    ok: false, expected: ["b"]
+    ok: false, expected: new Set(["b"])
   }},
   {name: 'ser fail end', parser: ser(str('a'),str('b'),str('c')), input: "abd", result: {
-    ok: false, expected: ["c"]
+    ok: false, expected: new Set(["c"])
   }},
   // Note that this fakes a parser just to make sure the exception is caught within the test runner.
   {name: 'ser no parsers passed', parser: {parse: ()=>ser()}, input: "", exception:
     "Call to `ser` passes no parsers."
   },
   {name: 'ser map more than one label', parser: ser({a: str('a'), b: str('b')}), input: "abd", exception:
-    'A ser label object contains multiple labels: {"a":{"chainContinuations":[]},"b":{"chainContinuations":[]}}'
+    'A ser label object contains multiple labels: {a: str("a"), b: str("b")}'
   },
 
   // alt
@@ -118,7 +118,7 @@ module.exports = [
     ok: true, value: ['a', 'b'], context: {index: 2}
   }},
   {name: 'alt fail', parser: alt(str('a'), str('b')), input: "cab", result: {
-    ok: false, expected: ['a','b'], context: {index: 0}
+    ok: false, expected: new Set(['a','b']), context: {index: 0}
   }},
   {name: 'alt doesnt allow state pollution', parser: alt(modifyState(), parseBasedOnState()), input: "y", result: {
     ok: true, value: 'y'
@@ -129,7 +129,7 @@ module.exports = [
     ok: true, value: ['a', 'a']
   }},
   {name: 'times no match', parser: times(2, str('a')), input: "ab", result: {
-    ok: false, expected: ['a']
+    ok: false, expected: new Set(['a'])
   }},
 
   // atLeast
@@ -140,7 +140,7 @@ module.exports = [
     ok: true, value: ['a', 'a', 'a', 'a']
   }},
   {name: 'atLeast less', parser: atLeast(2, str('a')), input: "a", result: {
-    ok: false, expected: ['a']
+    ok: false, expected: new Set(['a'])
   }},
 
   // atMost
@@ -162,7 +162,7 @@ module.exports = [
     ok: true, value: ['a', 'a', 'a', 'a']
   }},
   {name: 'timesBetween less', parser: atLeast(2, str('a')), input: "a", result: {
-    ok: false, expected: ['a']
+    ok: false, expected: new Set(['a'])
   }},
 
   // many
@@ -178,7 +178,7 @@ module.exports = [
     ok: true, value: undefined, context:{index:0}
   }},
   {name: 'not fail', parser: not(str('a')), input: "a", result: {
-    ok: false, expected: ['not a'], context:{index:0}
+    ok: false, expected: new Set(['not a']), context:{index:0}
   }},
 
   // peek
@@ -186,7 +186,7 @@ module.exports = [
     ok: true, value: 'a', context:{index:0}
   }},
   {name: 'peek fail', parser: peek(str('a')), input: "b", result: {
-    ok: false, expected: ['a'], context:{index:0}
+    ok: false, expected: new Set(['a']), context:{index:0}
   }},
 
   // More

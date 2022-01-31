@@ -1,10 +1,10 @@
 const {alt, eof, ser, str} = require("../src/parsers")
 const {lazy, lazyParsers, importParsers} = require("../src/lazy")
 
-const wrappedParserA = lazy(function() {
+const wrappedParserA = lazy('wrappedParserA', function() {
   return alt(str('b'), wrappedParserB('a'))
 })
-const wrappedParserB = lazy(function(arg1) {
+const wrappedParserB = lazy('wrappedParserB', function(arg1) {
   return ser(str(arg1), wrappedParserA())
 })
 
@@ -17,7 +17,7 @@ const wrappedParsers = lazyParsers({
   }
 })
 
-const wrappedParserC = lazy(function(string) {
+const wrappedParserC = lazy("wrappedParserC", function(string) {
   if(string) {
     return str(string)
   } else {
@@ -25,7 +25,7 @@ const wrappedParserC = lazy(function(string) {
     return wrappedParserD()
   }
 })
-const wrappedParserD = lazy(function() {
+const wrappedParserD = lazy("wrappedParserD", function() {
   return wrappedParserC(this.get('x'))
 })
 
@@ -36,7 +36,7 @@ module.exports = [
     ok: true, value: ['a', 'b']
   }},
   {name: 'lazy fail', parser: wrappedParserA(), input: "ac", result: {
-    ok: false, expected: ['b', 'b', 'a']
+    ok: false, expected: new Set(['b', 'a'])
   }},
   {name: 'recursive parser', parser: recursiveParserA(), input: "ababab", result: {
     ok: true, value: ["a",["b",["a",["b",["a",["b", undefined]]]]]]

@@ -2,9 +2,12 @@ var {Parser} = require("../src/core")
 
 
 module.exports = [
+
+
+  //*
   {name: 'ok parser', run: function(){
     const results = []
-    var parser = Parser(function() {
+    var parser = Parser('parser', function() {
       results.push(this.index === 0)
       results.push(this.input === 'testString')
       let parseResult = this.ok(2, 'resultValue')
@@ -28,7 +31,7 @@ module.exports = [
 
   {name: 'fail parser', run: function(){
     const results = []
-    var parser = Parser(function() {
+    var parser = Parser('parser', function() {
       results.push(this.index === 0)
       results.push(this.input === 'testString')
       let parseResult = this.fail(3, ['a', 'b', 'c'])
@@ -46,28 +49,28 @@ module.exports = [
       parseResult.context.input === 'testString')
     return results
   }, result: [
-    true, true, true, true, true, ['a', 'b', 'c'], true, true
+    true, true, true, true, true, new Set(['a', 'b', 'c']), true, true
   ]},
 
   {name: 'fail expected parameter promotes to array', run: function(){
-    var parser = Parser(function() {
+    var parser = Parser('parser', function() {
       return this.fail(3, 'a')
     })
     return parser.parse('testString')
   }, result: {
-    expected: ['a']
+    expected: new Set(['a'])
   }},
 
   {name: 'chain', run: function(){
     const results = []
     let firstParseResult
-    var parser = Parser(function() {
+    var parser = Parser('parser', function() {
       firstParseResult = this.ok(4, 'a')
       return firstParseResult
     }).chain(function(value) {
       results.push(value === firstParseResult.value)
-      return Parser(function() {
-        results.push(this === firstParseResult.context)
+      return Parser('parser', function() {
+        results.push(this.index === firstParseResult.context.index)
         return this.ok(5, 'b')
       })
     })
@@ -77,10 +80,9 @@ module.exports = [
     true, true, {ok: true, value: 'b', context: {index: 5}}
   ]},
 
-  // Make sure alt doesn't
   {name: 'ok parser state', run: function(){
     const results = []
-    var parser = Parser(function() {
+    var parser = Parser('parser', function() {
       // Note that state should only be set if the parser succeeds. On the other end, in case a parser
       // doesn't follow that rule, parsers that
       // try multiple parsers until one succeeds should pass copies of the context.
@@ -99,9 +101,11 @@ module.exports = [
   ]},
 
   {name: 'parser wrong input', run: function(){
-    Parser('wrong')
+    Parser('parser', 'wrong')
   }, exception:
     "Argument passed to parse is neither a string nor a Context object."
   },
+
+  //*/
 ]
 

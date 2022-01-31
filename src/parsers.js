@@ -2,7 +2,7 @@ const {Parser} = require("./core")
 
 // Matches the end of input, returns undefined.
 exports.eof = function() {
-  return Parser(function() {
+  return Parser('eof', function() {
     if(this.index >= this.input.length) {
       return this.ok(this.index)
     } else {
@@ -13,21 +13,21 @@ exports.eof = function() {
 
 // Returns a parser that consumes no input and returns a result.
 exports.ok = function(result) {
-  return Parser(function() {
+  return Parser('ok', function() {
     return this.ok(this.index, result)
   })
 }
 
 // Returns a parser that consumes no input and fails with an expectation or whatever.
 exports.fail = function(expected) {
-  return Parser(function() {
+  return Parser('fail', function() {
     return this.fail(this.index, expected)
   })
 }
 
 // Matches a string.
 exports.str = function(string) {
-  return Parser(function() {
+  return Parser('str('+JSON.stringify(string)+')', function() {
     const start = this.index
     const end = this.index + string.length
     if(this.input.slice(start, end) === string) {
@@ -48,7 +48,7 @@ exports.match = function(regexp) {
     }
   }
   const sticky = new RegExp(regexp.source, regexp.flags + "y") // Force regex to only match at sticky.lastIndex
-  return new Parser(function() {
+  return new Parser('match('+regexp+')', function() {
     sticky.lastIndex = this.index
     const match = this.input.match(sticky)
     if (match) {
@@ -71,18 +71,23 @@ exports.match = function(regexp) {
 exports.ser = function(...parsers) {
   if(parsers.length === 0) throw new Error("Call to `ser` passes no parsers.")
 
-  return Parser(function() {
+  return Parser('ser', function() {
     // Normalize any labeled parser and extract labels
     const labels = []
     parsers = parsers.map((parser, n) => {
       if(parsers[n] instanceof Parser) {
         return parser
       } else if(parsers[n] instanceof Function || !(parsers[n] instanceof Object)) {
-        throw new Error("ser passed something other than a parser or labled parser object: "+parsers[n]+".")
+        throw new Error("ser passed something other than a parser or labeled parser object: "+parsers[n]+".")
       } else {
         let found = false, parserToReturn
         for(let curLabel in parser) {
-          if(found) throw new Error("A ser label object contains multiple labels: "+JSON.stringify(parser))
+          if(found) {
+            const objectDisplay = '{'+Object.keys(parser).map((key) => {
+              return key+": "+(parser[key].name || JSON.stringify(parser[key]))
+            }).join(', ')+'}'
+            throw new Error("A ser label object contains multiple labels: "+objectDisplay)
+          }
           found = true
           parserToReturn = parser[curLabel]
           labels[n] = curLabel
@@ -123,15 +128,15 @@ exports.ser = function(...parsers) {
 exports.alt = function(...parsers) {
   if(parsers.length === 0) throw new Error("Call to `ser` passes no parsers.")
 
-  return Parser(function() {
-    let expected = [], furthest = this.index
+  return Parser('alt', function() {
+    let expected = new Set, furthest = this.index
     for(let n=0; n<parsers.length; n++) {
       const parser = parsers[n]
       const result = parser.parse(this.copy())
       if(result.ok) {
         return result
       } else {
-        expected = expected.concat(result.expected)
+        expected = new Set([...expected, ...result.expected])
         if(result.context.index > furthest) {
           furthest = result.context.index
         }
@@ -144,31 +149,32 @@ exports.alt = function(...parsers) {
 
 // Expects the parser to match `numberOfTimes` in a series.
 exports.times = function(numberOfTimes, parser) {
-  return _timesInternal(parser, {atLeast: numberOfTimes, atMost: numberOfTimes})
+  return _timesInternal('times', parser, {atLeast: numberOfTimes, atMost: numberOfTimes})
 }
 
 // Expects the parser to match at least `numberOfTimes` in a series.
 exports.atLeast = function(numberOfTimes, parser) {
-  return _timesInternal(parser, {atLeast: numberOfTimes})
+  return _timesInternal('atLeast', parser, {atLeast: numberOfTimes})
 }
 
 // Allows a parser to match at most `numberOfTimes` in a series.
 exports.atMost = function(numberOfTimes, parser) {
-  return _timesInternal(parser, {atMost: numberOfTimes})
+  return _timesInternal('atMost', parser, {atMost: numberOfTimes})
 }
 
 // Allows a parser to match between `atLeast` and `atMost` times in a series.
 exports.timesBetween = function(atLeast, atMost, parser) {
-  return _timesInternal(parser, {atLeast, atMost})
+  return _timesInternal('timesBetween', parser, {atLeast, atMost})
 }
 
 // Allows a parser to match 0 or more times in a series.
 exports.many = function(parser) {
-  return _timesInternal(parser)
+  return _timesInternal('many', parser)
 }
 
 // Runs a parser a number of times with some constraints.
 function _timesInternal(
+  name, // A string name for the parser.
   parser, // A Parser.
   constraints // An object with the following properties:
               // * atLeast - (Optional) Fails if the parser doesn't match this many times.
@@ -177,7 +183,7 @@ function _timesInternal(
   const maxParses = constraints && constraints.atMost || Infinity
   const minParses = constraints && constraints.atLeast || 0
 
-  return Parser(function() {
+  return Parser(name, function() {
     const results = []
     let curContext = this, lastResult
     for(let n=0; n<maxParses; n++) {
@@ -188,7 +194,7 @@ function _timesInternal(
         curContext = result.context
       } else {
         if(results.length < minParses) {
-          let indexContext = lastResult? lastResult.context : context
+          let indexContext = lastResult? lastResult.context : curContext
           // Improve this error message (expectation?)
           return this.fail(indexContext.index, result.expected)
         } else {
@@ -204,7 +210,7 @@ function _timesInternal(
 // Returns a parser that returns true if the passed in parser doesn't match.
 // Doesn't return a value and doesn't advance the index.
 exports.not = function(parser) {
-  return Parser(function() {
+  return Parser('not', function() {
     const result = parser.parse(this)
     if(result.ok) {
       return this.fail(this.index, ['not '+this.input.slice(this.index, result.index)])
@@ -216,7 +222,7 @@ exports.not = function(parser) {
 
 // Returns a parser that consumes no input and fails with an expectation or whatever.
 exports.peek = function(parser) {
-  return Parser(function() {
+  return Parser('peek', function() {
     const result = parser.parse(this)
     if(result.ok) {
       return this.ok(this.index, result.value)

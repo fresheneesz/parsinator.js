@@ -53,7 +53,6 @@ function runTests(tests) {
   function recordUnexpectedException(test, e) {
     failures++
     console.log(colors.red("X  "+test.name))
-    console.log(colors.red(" Error for: "+JSON.stringify(test)))
     console.error(" "+colors.red(e))
   }
 }
@@ -105,6 +104,15 @@ function partialDeepEqual(testObject, expectedValue) {
       }
     }
     return true
+  } else if(expectedValue instanceof Set) {
+    if(!(testObject instanceof Set)) return false
+    if(testObject.length !== expectedValue.length) return false
+    for(const value of expectedValue.values()) {
+      if(!testObject.has(value)) {
+        return false
+      }
+    }
+    return true
   } else if(expectedValue instanceof Function) {
     return expectedValue === testObject
   } else if(expectedValue instanceof Object) {
@@ -122,7 +130,7 @@ function partialDeepEqual(testObject, expectedValue) {
 
 // Returns a parser that consumes no input and returns a result.
 function setIndex(index) {
-  return Parser(function() {
+  return Parser('setIndex', function() {
     return this.ok(index)
   })
 }
