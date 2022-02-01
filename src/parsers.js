@@ -71,31 +71,31 @@ exports.match = function(regexp) {
 exports.ser = function(...parsers) {
   if(parsers.length === 0) throw new Error("Call to `ser` passes no parsers.")
 
-  return Parser('ser', function() {
-    // Normalize any labeled parser and extract labels
-    const labels = []
-    parsers = parsers.map((parser, n) => {
-      if(parsers[n] instanceof Parser) {
-        return parser
-      } else if(parsers[n] instanceof Function || !(parsers[n] instanceof Object)) {
-        throw new Error("ser passed something other than a parser or labeled parser object: "+parsers[n]+".")
-      } else {
-        let found = false, parserToReturn
-        for(let curLabel in parser) {
-          if(found) {
-            const objectDisplay = '{'+Object.keys(parser).map((key) => {
-              return key+": "+(parser[key].name || JSON.stringify(parser[key]))
-            }).join(', ')+'}'
-            throw new Error("A ser label object contains multiple labels: "+objectDisplay)
-          }
-          found = true
-          parserToReturn = parser[curLabel]
-          labels[n] = curLabel
+  // Normalize any labeled parser and extract labels
+  const labels = []
+  parsers = parsers.map((parser, n) => {
+    if(parsers[n] instanceof Parser) {
+      return parser
+    } else if(parsers[n] instanceof Function || !(parsers[n] instanceof Object)) {
+      throw new Error("ser passed something other than a parser or labeled parser object: "+parsers[n]+".")
+    } else {
+      let found = false, parserToReturn
+      for(let curLabel in parser) {
+        if(found) {
+          const objectDisplay = '{'+Object.keys(parser).map((key) => {
+            return key+": "+(parser[key].name || JSON.stringify(parser[key]))
+          }).join(', ')+'}'
+          throw new Error("A ser label object contains multiple labels: "+objectDisplay)
         }
-        return parserToReturn
+        found = true
+        parserToReturn = parser[curLabel]
+        labels[n] = curLabel
       }
-    })
+      return parserToReturn
+    }
+  })
 
+  return Parser('ser', function() {
     let results
     if(labels.length === 0) {
       results = []

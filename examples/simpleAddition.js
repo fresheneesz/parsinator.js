@@ -9,7 +9,7 @@ const plus = str("+")
 const num = match(/[0-9]/)
 const side = lazy('side', function() {
   return alt(
-    ser(str("("), ws, expr, ws, str(")")),
+    ser(side(), str("("), ws, expr, ws, str(")")),
     num
   )
 })

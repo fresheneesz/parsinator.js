@@ -17,11 +17,16 @@ function displayError(result) {
   const inputInfoCache = InputInfoCache(result.context.input)
   const info = inputInfoCache.get(result.context.index)
 
-  const expectedText = buildExpectedText(result)
+  if(result.error) {
+    var message = "Got "+result.error.stack
+  } else { // exception
+    var message = "Expected: "+buildExpectedText(result)+"."
+  }
+
   const sourceDisplay = buildSourceDisplay2(result, inputInfoCache)
 
   outputText.push(sourceDisplay)
-  outputText.push("Couldn't continue passed line "+info.line+" column "+info.column+". Expected: "+expectedText+".")
+  outputText.push("Couldn't continue passed line "+info.line+" column "+info.column+". "+message)
   return outputText.join('\n')
 
   // Returns the list of expected values.
@@ -84,7 +89,7 @@ function displayDebugRecord(indent, record, options) {
   if(record.result) {
     const context = record.result.context
     if(options === undefined) {
-      options = {maxMatchChars: 30, inputInfoCache: InputInfoCache(context.input)}
+      options = {maxMatchChars: 30, maxSubrecordDepth: 75, inputInfoCache: InputInfoCache(context.input), colors: true}
     }
     const endIndex = context.index // non-inclusive
     const matchedChars = (endIndex - record.startIndex)
@@ -94,25 +99,50 @@ function displayDebugRecord(indent, record, options) {
       var matchedCharsString = matchedChars+' character'+(matchedChars>1?'s':'')
     }
     const inputInfo = options.inputInfoCache.get(record.startIndex)
-    const matchedString = colors.gray("["+inputInfo.line+":"+inputInfo.column+"] ")+
-                          (record.result.ok ?
-                            'matched '+matchedCharsString :
-                            'failed '+colors.gray(JSON.stringify(context.input.slice(record.startIndex, 30))))
+    const lineColumnNumbers = colors.gray("["+inputInfo.line+":"+inputInfo.column+"] ")
+    if(record.result.ok) {
+      var matchedString = lineColumnNumbers+'matched '+matchedCharsString
+    } else {
+      var matchedString = lineColumnNumbers+'failed '+
+                          colors.gray(JSON.stringify(
+                            context.input.slice(record.startIndex, record.startIndex+options.maxMatchChars)))
+    }
+
     if(indent >= 3) {
       var intentString = strmult(Math.floor(indent/3), '  |')+strmult(indent%3, ' ')
     } else {
       var intentString = strmult(indent, ' ')
     }
 
-    if(record.result.ok) {
-      var color = colors.green
+    if(options.colors) {
+      if(record.result.ok) {
+        var color = colors.green
+      } else {
+        var color = colors.red
+      }
     } else {
-      var color = colors.red
+      var color = function noop(x) {return x}
     }
 
     outputText.push(colors.gray(intentString)+color(record.name+": "+matchedString))
     record.subRecords && record.subRecords.forEach(function(subRecord) {
-      outputText.push(displayDebugRecord(indent+1, subRecord, options))
+      // This try is here to catch max callstack exceeded errors, which are likely to happen when a corresponding max
+      // callstack error happened in a parser.
+      try {
+        if(indent+1 < options.maxSubrecordDepth) {
+          outputText.push(displayDebugRecord(indent+1, subRecord, options))
+        } else {
+          outputText.push(color("Couldn't print more results, because the maxSubrecordDepth of "+options.maxSubrecordDepth+" was exceeded."))
+        }
+      }
+       catch(e) {
+        if(e.message === 'Maximum call stack size exceeded') {
+          outputText.push("Couldn't print more results, because the maximum call stack size was exceeded.")
+        } else {
+          throw e
+        }
+      }
+
     })
   }
   return outputText.join('\n')

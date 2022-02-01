@@ -169,12 +169,33 @@ module.exports = [
       return Parser('y', function() {
         return this.ok(2, value+'y')
       })
+    }).chain((value) => {
+      return Parser('z', function() {
+        return this.ok(3, value+'z')
+      })
     })
     return x.debug().parse('ignored').context.debugRecord
   }, result: {
-    name: 'chain', startIndex: 0, result: {ok: true, context:{index:2}, value: 'xy'}, subRecords: [
+    name: 'chain', startIndex: 0, result: {ok: true, context:{index:3}, value: 'xyz'}, subRecords: [
       {name: 'x', startIndex: 0, result: {ok: true, context:{index:1}, value: 'x'}},
       {name: 'y', startIndex: 1, result: {ok: true, context:{index:2}, value: 'xy'}},
+      {name: 'z', startIndex: 2, result: {ok: true, context:{index:3}, value: 'xyz'}},
+    ]
+  }},
+
+  {name: 'debugger: exception', run: function(){
+    var x = Parser('x', function() {
+      return this.ok(1, 'x')
+    }).chain((value) => {
+      return Parser('y', function() {
+        throw new Error("Some error")
+      })
+    })
+    return x.debug().parse('ignored').context.debugRecord
+  }, result: {
+    name: 'chain', startIndex: 0, result: {ok: false, context:{index:1}, error: new Error("Some error")}, subRecords: [
+      {name: 'x', startIndex: 0, result: {ok: true, context:{index:1}, value: 'x'}},
+      {name: 'y', startIndex: 1, result: {ok: false, context:{index:1}, error: new Error("Some error")}},
     ]
   }},
 

@@ -93,6 +93,7 @@ function testResultMatches(obtained, expected) {
   return partialDeepEqual(obtained, expected)
 }
 
+debugger
 // Ensures the testObject has the expectedValues, but does not require all keys in testObject to have a match.
 function partialDeepEqual(testObject, expectedValue) {
   if(expectedValue instanceof Array) {
@@ -115,6 +116,8 @@ function partialDeepEqual(testObject, expectedValue) {
     return true
   } else if(expectedValue instanceof Function) {
     return expectedValue === testObject
+  }  else if(expectedValue instanceof Error) {
+    return expectedValue.message === testObject.message
   } else if(expectedValue instanceof Object) {
     if(!(testObject instanceof Object)) return false
     for(let key in expectedValue){
