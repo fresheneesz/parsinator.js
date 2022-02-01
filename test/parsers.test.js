@@ -4,24 +4,6 @@ const {
 var {Parser} = require("../src/core")
 var {lazy} = require("../src/lazy")
 
-function a() {
-  return str('a').then(function(result, state) {
-    const curIndent = state.get('indent') || 0
-    state.set('indent', curIndent+1)
-    return ok(result)
-  })
-}
-
-function x(indent, x) {
-  return ser(times(str(' '), indent), str(x))
-}
-
-function lang() {
-  return many(a()).chain(function(result) {
-    return str(result.value[0])
-  })
-}
-
 function modifyState() {
   return Parser('modifyState', function() {
     this.set('a', 'x') // The state is being set even tho this is returning a fail. This should never be done.
@@ -35,11 +17,6 @@ const parseBasedOnState = lazy('parseBasedOnState', function() {
     return str('y')
   }
 })
-
-
-
-// console.dir(lang().parse("a b"))
-// console.dir(many(str('a')).parse("aaaaa"))
 
 
 module.exports = [
@@ -189,12 +166,6 @@ module.exports = [
     ok: false, expected: new Set(['a']), context:{index:0}
   }},
 
-  // More
-  // {name: 'lang', parser: lang(), input: "a b", result: {
-  //   ok: true, value: ''
-  // }},
-
   //*/
 ]
-
 

@@ -1,5 +1,7 @@
 const proto = require("proto")
 
+const internal = 45 // Magic number that indicates internal. Don't use this externally.
+
 const ParserResult = proto(function() {
   this.init = function() {
       ;[this.ok, // Either true or false.
@@ -86,7 +88,7 @@ const Context = proto(function() {
       curContext.curDebugSection = {}
       this.curDebugSection.subRecords.push(curContext.curDebugSection)
     }
-    return parser.parse(curContext)
+    return parser.parse(curContext, internal)
   }
 
   // Initializes a new debug record.
@@ -125,6 +127,10 @@ const Parser = proto(function() {
     if(typeof(arguments[0]) !== 'string' && !(arguments[0] instanceof Context)) {
       throw new Error("Argument passed to parse is neither a string nor a Context object.")
     }
+    if(arguments[0] instanceof Context && arguments[1] !== internal) {
+      throw new Error("If you're calling Parser.parse inside another parser, please use" +
+                      " this.parse(parser, context) instead for debuggability.")
+    }
 
     let context;
     if(arguments[0] instanceof Context) {
@@ -137,11 +143,18 @@ const Parser = proto(function() {
       }
     }
 
+    const willChain = this.chainContinuations.length !== 0
     if(context.debug) {
-      context.addDebugParseInit(this.name, context.index)
+      const name = willChain ? "chain" : this.name
+      context.addDebugParseInit(name, context.index)
     }
-    const result = this.action.apply(context)
-    if(context.debug) {
+    if(willChain) {
+      var result = context.parse(Parser(this.name, this.action), context)
+    } else {
+      var result = this.action.apply(context)
+    }
+
+    if(context.debug && !willChain) {
       context.addDebugResult(result)
     }
 
@@ -151,10 +164,13 @@ const Parser = proto(function() {
         const continuation = this.chainContinuations[n]
         const parser = continuation(curResult.value)
         if(!(parser instanceof Parser)) throw new Error("Function passed to `then` did not return a parser. The function is: "+continuation.toString())
-        curResult = parser.parse(curResult.context)
+        curResult = context.parse(parser, curResult.context)
       } else {
         break
       }
+    }
+    if(context.debug && willChain) {
+      context.addDebugResult(curResult)
     }
     return curResult
   }
@@ -163,7 +179,7 @@ const Parser = proto(function() {
   // If the parser returns an ok ParserResult, calls `continuation` to get the next parser to continue parsing from.
   // continuation(value) - Should return a Parser.
   this.chain = function(continuation) {
-    return Parser(this.name+' chain', this.action, this.chainContinuations.concat(continuation))
+    return Parser(this.name, this.action, this.chainContinuations.concat(continuation))
   }
 
   // Sets whether or not this Parser is in debug mode.

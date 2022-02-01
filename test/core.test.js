@@ -162,6 +162,22 @@ module.exports = [
     ]
   }},
 
+  {name: 'debugger: output for chain', run: function(){
+    var x = Parser('x', function() {
+      return this.ok(1, 'x')
+    }).chain((value) => {
+      return Parser('y', function() {
+        return this.ok(2, value+'y')
+      })
+    })
+    return x.debug().parse('ignored').context.debugRecord
+  }, result: {
+    name: 'chain', startIndex: 0, result: {ok: true, context:{index:2}, value: 'xy'}, subRecords: [
+      {name: 'x', startIndex: 0, result: {ok: true, context:{index:1}, value: 'x'}},
+      {name: 'y', startIndex: 1, result: {ok: true, context:{index:2}, value: 'xy'}},
+    ]
+  }},
+
   //*/
 ]
 
