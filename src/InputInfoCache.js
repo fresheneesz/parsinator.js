@@ -12,8 +12,8 @@ module.exports = proto(function LineCache() {
   // * line - A 1-based line number.
   // * column - The 1-based column number.
   this.get = function(index) {
-    if(index >= this.input.length) {
-      throw new Error("Asking for info about an index not contained in the target string.")
+    if(index < 0 || this.input.length <= index) {
+      throw new Error("Asking for info about an index not contained in the target string: "+index+'.')
     }
 
     let lastLineEndIndex = -1
@@ -33,7 +33,6 @@ module.exports = proto(function LineCache() {
     } else {
       throw new Error("Couldn't find line info.")
     }
-
 
     // Gets line information for the passed index.
     function getLineInfo(index, cache, zeroBasedLine, lastLineEndIndex) {

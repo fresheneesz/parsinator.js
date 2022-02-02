@@ -17,7 +17,8 @@ function lazy(name, parserCombinator) {
   }
 }
 
-// Wraps each parser function so that it can properly recurse a
+// Wraps each parser function so that it can properly recurse, and ensures that each parser gets a debug name.
+// parserMap - An object where each key is a parser name, and each value is a function to pass to `lazy`.
 function lazyParsers(parserMap) {
   var wrappedParsers = {}
   for(const name in parserMap) {
@@ -26,6 +27,11 @@ function lazyParsers(parserMap) {
   return wrappedParsers
 }
 
+// Generates a string that declares all parsers within `parsersObject` as the names given to them in the keys
+// in `parsersObject`. The result of this is intended to be run with `eval` in order to import all the parsers as their
+// names in scope.
+// parserObjectName - The name of parsersObject in the upper scope.
+// declarator - (default: 'var') The type of declaration to use for the imports.
 function importParsers(parsersObject, parserObjectName, declarator) {
   if(declarator === undefined) declarator = 'var'
 

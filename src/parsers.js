@@ -111,7 +111,7 @@ exports.ser = function(...parsers) {
         if(labels.length === 0) {
           results.push(result.value)
         } else {
-          results[labels[n]] = result.value
+          if(labels[n]) results[labels[n]] = result.value
         }
 
         lastResult = result

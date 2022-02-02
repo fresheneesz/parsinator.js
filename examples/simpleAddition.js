@@ -19,6 +19,6 @@ const simpleTest = alt(str('a'), str('b'))
 
 // const result = expr.debug().parse("(1+(2+3x))+4")
 // const result = expr.debug().parse("(\n1+(2+3x))+4")
-// const result = expr.debug().parse("(\n\n\n\n\n\n\n\n1+\n(2+\n3x))\n+4")
-const result = simpleTest.debug().parse("bb")
+const result = expr.debug().parse("(\n\n\n\n\n\n\n\n1+\n(2+\n3x))\n+4")
+// const result = simpleTest.debug().parse("bb")
 console.log(displayResult(result)+'\n'+displayDebugInfo(result))

@@ -44,10 +44,12 @@ function runTests(tests) {
   function recordFailure(name, expectedResult, actualResult) {
     failures++
     console.log(colors.red("X  "+name))
-    console.log(colors.red(" Got unexpected result for "+JSON.stringify(name)+"!!!"))
-    console.log(colors.magenta(" Expected: "+util.inspect(expectedResult, {depth:null})))
-    console.log(colors.red(" Got: "))
-    console.log(colors.red(" "+util.inspect(actualResult, {depth:null})))
+    console.log(colors.red(indent1("Expected: "+util.inspect(expectedResult, {depth:null}))))
+    console.log(colors.magenta(indent1("Got: "+util.inspect(actualResult, {depth:null}))))
+  }
+
+  function indent1(string) {
+    return ' '+string.split('\n').join('\n ')
   }
 
   function recordUnexpectedException(test, e) {

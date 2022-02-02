@@ -68,8 +68,9 @@ module.exports = [
   {name: 'ser', parser: ser(str('a'),str('b'),str('c')), input: "abc", result: {
     ok: true, value: ['a', 'b', 'c']
   }},
+  // The undefined: undefined there is testing to cover a bug where an undefined label was used as a key.
   {name: 'ser map', parser: ser({a: str('a')},str('b'),{c: str('c')}), input: "abc", result: {
-    ok: true, value: {a: 'a', c:'c'}
+    ok: true, value: {a: 'a', undefined: undefined, c:'c'}
   }},
   {name: 'ser fail start', parser: ser(str('a'),str('b'),str('c')), input: "bbd", result: {
     ok: false, expected: new Set(["a"])

@@ -8,17 +8,30 @@ exports.displayResult = function(result, options) {
     indicatorColor: colors.red, inputInfoCache: InputInfoCache(result.context.input)
   }, options)
   if(result.ok) {
-    const info = options.inputInfoCache.get(result.context.index)
-    return "Parsed successfully through line "+info.line+" column "+info.column
+    return displaySuccess(result, options)
   } else {
     return displayError(result, options)
   }
 }
 
+function displaySuccess(result, options) {
+  const info = options.inputInfoCache.get(result.context.index-1)
+  return "Parsed successfully through line "+info.line+" column "+info.column+'. Result:\n'+
+         JSON.stringify(result.value)
+}
+
 // Displays an error result.
 function displayError(result, options) {
   const outputText = []
-  const info = options.inputInfoCache.get(result.context.index)
+  let index = result.context.index
+  const failedAtEof = index == result.context.input.length
+  if(failedAtEof) {
+    index--
+  }
+  const info = options.inputInfoCache.get(index)
+  if(failedAtEof) {
+    info.column += 1
+  }
 
   if(result.error) {
     var message = "Got "+result.error.stack
@@ -26,7 +39,7 @@ function displayError(result, options) {
     var message = "Expected: "+buildExpectedText(result)+"."
   }
 
-  const sourceDisplay = buildSourceDisplay(result, options.inputInfoCache)
+  const sourceDisplay = buildSourceDisplay(result.context.input, info, options.inputInfoCache)
 
   outputText.push(sourceDisplay)
   outputText.push("Couldn't continue passed line "+info.line+" column "+info.column+". "+message)
@@ -34,9 +47,9 @@ function displayError(result, options) {
 
   // Returns the list of expected values.
   function buildExpectedText(result) {
-    if(result.expected.length === 1) {
+    if(result.expected.size === 1) {
       return '"'+Array.from(result.expected)[0]+'"'
-    } else if(result.expected.length === 2) {
+    } else if(result.expected.size === 2) {
       const expected = Array.from(result.expected)
       return '"'+expected[0]+'" or "'+expected[1]+'"'
     } else {
@@ -47,19 +60,19 @@ function displayError(result, options) {
 
   // Creates text that shows the source from a couple lines before to a couple lines after the result.
   // Also prints an indicator pointer that makes it easy to find the correct character pointed out in the result.
-  function buildSourceDisplay(result, inputInfoCache) {
-    const info = inputInfoCache.get(result.context.index)
+  // info - The input info containing the line and column.
+  function buildSourceDisplay(input, info, inputInfoCache) {
     const charsInLineNumber = String(info.line+2).length
     const linesAtAndBefore = getNumberedLines(
-      result.context.input, Math.max(1, info.line-4), info.line, {lineNumberPadding: charsInLineNumber, inputInfoCache}
+      input, Math.max(1, info.line-4), info.line, {lineNumberPadding: charsInLineNumber, inputInfoCache}
     )
     const linesAfter = getNumberedLines(
-      result.context.input, info.line+1, info.line+2, {lineNumberPadding: charsInLineNumber, inputInfoCache}
+      input, info.line+1, info.line+2, {lineNumberPadding: charsInLineNumber, inputInfoCache}
     )
 
     return linesAtAndBefore+'\n    '+
-           strmult(charsInLineNumber+info.column-1, ' ')+options.indicatorColor('^')+'\n'+
-           linesAfter
+           strmult(charsInLineNumber+info.column-1, ' ')+options.indicatorColor('^')
+           +(linesAfter? '\n'+linesAfter : '')
   }
 
   // Gets the lines between startLine and endLine, inclusive, and numbers them with line numbers.
@@ -141,7 +154,8 @@ function displayDebugRecord(indent, record, options) {
     }
 
     outputText.push(gray(intentString)+color(record.name+": "+matchedString))
-    record.subRecords && record.subRecords.forEach(function(subRecord) {
+    if(record.subRecords) for(let n=0; n<record.subRecords.length; n++) {
+      const subRecord = record.subRecords[n]
       // This try is here to catch max callstack exceeded errors, which are likely to happen when a corresponding max
       // callstack error happened in a parser.
       try {
@@ -149,17 +163,16 @@ function displayDebugRecord(indent, record, options) {
           outputText.push(displayDebugRecord(indent+1, subRecord, options))
         } else {
           outputText.push(color("Couldn't print more results, because the maxSubrecordDepth of "+options.maxSubrecordDepth+" was exceeded."))
+          break
         }
-      }
-       catch(e) {
+      } catch(e) {
         if(e.message === 'Maximum call stack size exceeded') {
           outputText.push("Couldn't print more results, because the maximum call stack size was exceeded.")
         } else {
           throw e
         }
       }
-
-    })
+    }
   }
   return outputText.join('\n')
 }

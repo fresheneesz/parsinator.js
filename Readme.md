@@ -7,9 +7,7 @@ Docs TBD
 
 
 Todo:
-* Display unit tests
-  * options
-  * max callstack exceeded
+* Write docs
 * Inform people:
   * https://github.com/jneen/parsimmon/issues/143
   * https://github.com/jneen/parsimmon/issues/230

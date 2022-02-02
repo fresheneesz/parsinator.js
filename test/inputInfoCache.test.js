@@ -43,7 +43,7 @@ module.exports = [
     const cache = InputInfoCache("hi")
     cache.get(3)
   }, exception:
-    "Asking for info about an index not contained in the target string."
+    "Asking for info about an index not contained in the target string: 3."
   },
 
 ]
