@@ -185,6 +185,15 @@ module.exports = [
 
   {name: 'debugger: exception', run: function(){
     var x = Parser('x', function() {
+      throw new Error("Some error")
+    })
+    return x.debug().parse('ignored').context.debugRecord
+  }, result: {
+    name: 'x', startIndex: 0, result: {ok: false, context:{index:0}, error: new Error("Some error")}
+  }},
+
+  {name: 'debugger: chain exception', run: function(){
+    var x = Parser('x', function() {
       return this.ok(1, 'x')
     }).chain((value) => {
       return Parser('y', function() {

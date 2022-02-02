@@ -3,19 +3,22 @@ const colors = require("colors")
 const InputInfoCache = require("./InputInfoCache")
 
 
-exports.displayResult = function(result) {
+exports.displayResult = function(result, options) {
+  options = Object.assign({
+    indicatorColor: colors.red, inputInfoCache: InputInfoCache(result.context.input)
+  }, options)
   if(result.ok) {
-    return "Parsed successfully\n"+util.inspect(result)
+    const info = options.inputInfoCache.get(result.context.index)
+    return "Parsed successfully through line "+info.line+" column "+info.column
   } else {
-    return displayError(result)
+    return displayError(result, options)
   }
 }
 
 // Displays an error result.
-function displayError(result) {
+function displayError(result, options) {
   const outputText = []
-  const inputInfoCache = InputInfoCache(result.context.input)
-  const info = inputInfoCache.get(result.context.index)
+  const info = options.inputInfoCache.get(result.context.index)
 
   if(result.error) {
     var message = "Got "+result.error.stack
@@ -23,7 +26,7 @@ function displayError(result) {
     var message = "Expected: "+buildExpectedText(result)+"."
   }
 
-  const sourceDisplay = buildSourceDisplay2(result, inputInfoCache)
+  const sourceDisplay = buildSourceDisplay(result, options.inputInfoCache)
 
   outputText.push(sourceDisplay)
   outputText.push("Couldn't continue passed line "+info.line+" column "+info.column+". "+message)
@@ -42,36 +45,45 @@ function displayError(result) {
     }
   }
 
-  function buildSourceDisplay2(result, inputInfoCache) {
+  // Creates text that shows the source from a couple lines before to a couple lines after the result.
+  // Also prints an indicator pointer that makes it easy to find the correct character pointed out in the result.
+  function buildSourceDisplay(result, inputInfoCache) {
     const info = inputInfoCache.get(result.context.index)
-    const charsInLineNumber = String(info.line).length
-    const firstLineToDisplay = Math.max(1, info.line-4)
-    const inputDisplayStartIndex = inputInfoCache.getLineIndex(Math.max(1, firstLineToDisplay))
-    let inputDisplayEndIndex = inputInfoCache.getLineIndex(info.line+1)
+    const charsInLineNumber = String(info.line+2).length
+    const linesAtAndBefore = getNumberedLines(
+      result.context.input, Math.max(1, info.line-4), info.line, {lineNumberPadding: charsInLineNumber, inputInfoCache}
+    )
+    const linesAfter = getNumberedLines(
+      result.context.input, info.line+1, info.line+2, {lineNumberPadding: charsInLineNumber, inputInfoCache}
+    )
 
-    const linesAtAndBefore = result.context.input.slice(inputDisplayStartIndex, inputDisplayEndIndex).split('\n')
-    // If the last character was just a newline, remove it. Otherwise there'd be an extra line.
-    if(linesAtAndBefore[linesAtAndBefore.length-1] === '') {
-      linesAtAndBefore.splice(linesAtAndBefore.length-1, 1)
-    }
-    insertLineNumbers(linesAtAndBefore, firstLineToDisplay, charsInLineNumber)
-    let sourceDisplay = linesAtAndBefore.join('\n')+
-                        '\n    '+strmult(charsInLineNumber+info.column-1, ' ')+colors.red('^')+'\n'
-
-    // const lineAfterIndex = inputDisplayEndIndex
-    // const lineAfterEnd = inputInfoCache.getLineIndex(info.line+2)
-    // if(lineAfterEnd) {
-    //   let lineAfter = result.context.input.slice(lineAfterIndex, lineAfterEnd)
-    //   // If the last character was just a newline, remove it. Otherwise there'd be an extra line.
-    //   if(lineAfter.slice(-1) === '\n') {
-    //     lineAfter = lineAfter.slice(0, -1)
-    //   }
-    //   insertLineNumbers(lineAfter, info.line+1, charsInLineNumber)
-    //   sourceDisplay += lineAfter
-    // }
-    return sourceDisplay
+    return linesAtAndBefore+'\n    '+
+           strmult(charsInLineNumber+info.column-1, ' ')+options.indicatorColor('^')+'\n'+
+           linesAfter
   }
 
+  // Gets the lines between startLine and endLine, inclusive, and numbers them with line numbers.
+  function getNumberedLines(input, startLine, endLine, options) {
+    options = Object.assign({lineNumberPadding: 0}, options)
+
+    const inputDisplayStartIndex = options.inputInfoCache.getLineIndex(startLine)
+    let indexAfterEnd = options.inputInfoCache.getLineIndex(endLine+1)
+    if(!indexAfterEnd) {
+      indexAfterEnd = result.context.input.length
+    }
+
+    const lines = input.slice(inputDisplayStartIndex, indexAfterEnd).split('\n')
+    // If the last character was just a newline, remove it. Otherwise there'd be an extra line.
+    if(lines[lines.length-1] === '') {
+      lines.splice(lines.length-1, 1)
+    }
+    insertLineNumbers(lines, startLine, options.lineNumberPadding)
+    return lines.join('\n')
+  }
+
+  // Inserts lines numbers into the list of `lines`.
+  // zeroLineNumber - the first line number in `lines.
+  // charsInLineNumber - The number of characters in the greatest line number (used to ensure proper padding).
   function insertLineNumbers(lines, zeroLineNumber, charsInLineNumber) {
     for(var n=0; n<lines.length; n++) {
       lines[n] = ' '+String(zeroLineNumber + n).padStart(charsInLineNumber, ' ')+' | '+lines[n]
@@ -79,18 +91,26 @@ function displayError(result) {
   }
 }
 
-exports.displayDebugInfo = function(result) {
+exports.displayDebugInfo = function(result, options) {
   const debugRecord = result.context.debugRecord
-  return displayDebugRecord(0, debugRecord)
+  options = Object.assign({
+    colors: true, maxMatchChars: 30, maxSubrecordDepth: 75,
+    inputInfoCache: InputInfoCache(debugRecord.result.context.input)
+  }, options)
+  return displayDebugRecord(0, debugRecord, options)
 }
 
 function displayDebugRecord(indent, record, options) {
+  let green = colors.green
+  let red = colors.red
+  let gray = colors.gray
+  if(!options.colors) {
+    green = red = gray = (x => x) // noop
+  }
+
   const outputText = []
   if(record.result) {
     const context = record.result.context
-    if(options === undefined) {
-      options = {maxMatchChars: 30, maxSubrecordDepth: 75, inputInfoCache: InputInfoCache(context.input), colors: true}
-    }
     const endIndex = context.index // non-inclusive
     const matchedChars = (endIndex - record.startIndex)
     if(matchedChars <= options.maxMatchChars) {
@@ -99,12 +119,12 @@ function displayDebugRecord(indent, record, options) {
       var matchedCharsString = matchedChars+' character'+(matchedChars>1?'s':'')
     }
     const inputInfo = options.inputInfoCache.get(record.startIndex)
-    const lineColumnNumbers = colors.gray("["+inputInfo.line+":"+inputInfo.column+"] ")
+    const lineColumnNumbers = gray("["+inputInfo.line+":"+inputInfo.column+"] ")
     if(record.result.ok) {
       var matchedString = lineColumnNumbers+'matched '+matchedCharsString
     } else {
       var matchedString = lineColumnNumbers+'failed '+
-                          colors.gray(JSON.stringify(
+                          gray(JSON.stringify(
                             context.input.slice(record.startIndex, record.startIndex+options.maxMatchChars)))
     }
 
@@ -114,17 +134,13 @@ function displayDebugRecord(indent, record, options) {
       var intentString = strmult(indent, ' ')
     }
 
-    if(options.colors) {
-      if(record.result.ok) {
-        var color = colors.green
-      } else {
-        var color = colors.red
-      }
+    if(record.result.ok) {
+      var color = green
     } else {
-      var color = function noop(x) {return x}
+      var color = red
     }
 
-    outputText.push(colors.gray(intentString)+color(record.name+": "+matchedString))
+    outputText.push(gray(intentString)+color(record.name+": "+matchedString))
     record.subRecords && record.subRecords.forEach(function(subRecord) {
       // This try is here to catch max callstack exceeded errors, which are likely to happen when a corresponding max
       // callstack error happened in a parser.

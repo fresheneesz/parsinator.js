@@ -2,7 +2,7 @@ const proto = require("proto")
 
 const internal = {} // Indicates internal to prevent misuse.
 
-const ParserResult = proto(function() {
+const ParseResult = proto(function() {
   this.init = function() {
       ;[this.ok, // Either true or false.
         this.context, // The Context that the parser parsed to. When this.ok is false, this indicates the furthest
@@ -53,7 +53,7 @@ const Context = proto(function() {
     index, // The new 'next' index. The parser succeeded up through the previous index.
     value  // The resulting value to return from the parser.
   ) {
-    return ParserResult(true, this.move(index), value)
+    return ParseResult(true, this.move(index), value)
   }
 
   // Indicates the parse failed and records error information.
@@ -66,7 +66,7 @@ const Context = proto(function() {
     if(!(expected instanceof Set)) {
       expected = new Set(expected)
     }
-    return ParserResult(false, this.move(index), undefined, expected)
+    return ParseResult(false, this.move(index), undefined, expected)
   }
 
   // Gets a state value.
@@ -128,13 +128,13 @@ const Context = proto(function() {
 const Parser = proto(function() {
   this.init = function() {
     ;[this.name,
-      this.action, // A function that returns a ParserResult.
+      this.action, // A function that returns a ParseResult.
       this.chainContinuations, // A list of continuations registered by `chain`.
     ] = arguments
     if(this.chainContinuations === undefined) this.chainContinuations = []
   }
 
-  // Returns a ParserResult.
+  // Returns a ParseResult.
   this.parse = function(
     // One of:
     // * input // A string input.
@@ -165,13 +165,27 @@ const Parser = proto(function() {
     if(isChain) {
       if(context.debug) context.addDebugParseInit("chain", context.index)
       chainContinuations = [() => Parser(this.name, this.action)].concat(chainContinuations)
-      return runContinuations(context, chainContinuations)
-    } else if(context.debug) {
-      context.addDebugParseInit(this.name, context.index)
-      try {
-        const result = this.action.apply(context)
-        context.addDebugResult(result)
+      return maybeTryCatch(context, isInternal, () => {
+        const result = runContinuations(context, chainContinuations)
+        // This ends up being the result of the entire chain.
+        if(context.debug) context.addDebugResult(result)
         return result
+      })
+    } else {
+      if(context.debug) context.addDebugParseInit(this.name, context.index)
+      return maybeTryCatch(context, isInternal, () => {
+        const result = this.action.apply(context)
+        if(context.debug) context.addDebugResult(result)
+        return result
+      })
+    }
+  }
+
+  // Runs an action that should return a ParseResult and catches and propagates errors properly.
+  function maybeTryCatch(context, isInternal, action) {
+    if(context.debug) {
+      try {
+        return action()
       } catch(e) {
         // The idea here is that any exception that happens should be caught, recorded in the debug
         // record, and re-thrown to propagate it up and returned as a top-level error result.
@@ -180,8 +194,7 @@ const Parser = proto(function() {
         if(e instanceof InternalError) {
           var result = e.result
         } else {
-          debugger
-          var result = ParserResult(false, context, undefined, ['no error'], e)
+          var result = ParseResult(false, context, undefined, ['no error'], e)
         }
         context.addDebugResult(result)
         if(isInternal) {
@@ -191,7 +204,7 @@ const Parser = proto(function() {
         }
       }
     } else {
-      return this.action.apply(context)
+      return action()
     }
   }
 
@@ -208,15 +221,11 @@ const Parser = proto(function() {
         break
       }
     }
-    // This ends up being the result of the entire chain.
-    if(context.debug) {
-      context.addDebugResult(prevResult)
-    }
     return prevResult
   }
 
   // Access and modifies the ParseResult of the parser this is called on.
-  // If the parser returns an ok ParserResult, calls `continuation` to get the next parser to continue parsing from.
+  // If the parser returns an ok ParseResult, calls `continuation` to get the next parser to continue parsing from.
   // continuation(value) - Should return a Parser.
   this.chain = function(continuation) {
     return Parser(this.name, this.action, this.chainContinuations.concat(continuation))

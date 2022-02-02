@@ -21,6 +21,7 @@ const parseBasedOnState = lazy('parseBasedOnState', function() {
 
 module.exports = [
 
+
   //*
 
   // eof
@@ -83,8 +84,12 @@ module.exports = [
   {name: 'ser no parsers passed', parser: {parse: ()=>ser()}, input: "", exception:
     "Call to `ser` passes no parsers."
   },
-  {name: 'ser map more than one label', parser: ser({a: str('a'), b: str('b')}), input: "abd", exception:
-    'A ser label object contains multiple labels: {a: str("a"), b: str("b")}'
+  {name: 'ser map more than one label',
+   parser: lazy('lazy', () =>
+     ser({a: str('a'), b: str('b')})
+   )(),
+   input: "abd",
+   exception: 'A ser label object contains multiple labels: {a: str("a"), b: str("b")}'
   },
 
   // alt
