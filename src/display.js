@@ -33,16 +33,14 @@ function displayError(result, options) {
     info.column += 1
   }
 
-  if(result.error) {
-    var message = "Got "+result.error.stack
-  } else { // exception
-    var message = "Expected: "+buildExpectedText(result)+"."
-  }
+  var failMessage = !result.error? "Expected: "+buildExpectedText(result)+"." : ''
+  var exceptionMessage = result.error? "Got "+result.error.stack : ''
 
   const sourceDisplay = buildSourceDisplay(result.context.input, info, options.inputInfoCache)
 
+  outputText.push("Couldn't continue passed line "+info.line+" column "+info.column+". "+failMessage)
   outputText.push(sourceDisplay)
-  outputText.push("Couldn't continue passed line "+info.line+" column "+info.column+". "+message)
+  if(exceptionMessage) outputText.push(exceptionMessage)
   return outputText.join('\n')
 
   // Returns the list of expected values.

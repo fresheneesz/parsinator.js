@@ -15,4 +15,4 @@ const parsers = lazyParsers({
 })
 eval(importParsers(parsers, 'parsers'))
 
-console.log(displayResult(applebanana().parse("applebanana")))
+console.log(displayResult(applebanana().parse("applebanana"))) // ["apple","banana"]

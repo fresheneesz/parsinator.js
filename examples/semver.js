@@ -12,7 +12,6 @@ const parsers = lazyParsers({
 })
 eval(importParsers(parsers, 'parsers'))
 
-console.log(displayResult(version().parse("3.14.15")))
+console.log(displayResult(version().parse("3.14.15"))) // {"major":3,"minor":14,"patch":15}
 console.log()
-    debugger
-console.log(displayResult(version().parse("3.14")))
+console.log(displayResult(version().parse("3.14"))) // Couldn't continue passed line 1 column 5. Expected: ".".

@@ -1,5 +1,5 @@
 const {
-  eof, ok, fail, str, match, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek
+  eof, ok, fail, str, match, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, desc
 } = require("../src/parsers")
 var {Parser} = require("../src/core")
 var {lazy} = require("../src/lazy")
@@ -44,7 +44,13 @@ module.exports = [
   }},
 
   // fail
-  {name: 'fail', parser: fail(['expectedValue']), input: "nonempty", result: {
+  {name: 'fail', parser: fail(new Set(['expectedValue'])), input: "nonempty", result: {
+    ok: false, expected: new Set(['expectedValue'])
+  }},
+  {name: 'fail array', parser: fail(['expectedValue']), input: "nonempty", result: {
+    ok: false, expected: new Set(['expectedValue'])
+  }},
+  {name: 'fail single value', parser: fail('expectedValue'), input: "nonempty", result: {
     ok: false, expected: new Set(['expectedValue'])
   }},
 
@@ -170,6 +176,14 @@ module.exports = [
   }},
   {name: 'peek fail', parser: peek(str('a')), input: "b", result: {
     ok: false, expected: new Set(['a']), context:{index:0}
+  }},
+
+  // desc
+  {name: 'desc', parser: desc('x', str('a')), input: "a", result: {
+    ok: true, value: 'a', context:{index:1}
+  }},
+  {name: 'desc fail', parser: desc('the first letter of the alphabet', str('a')), input: "b", result: {
+    ok: false, expected: new Set(['the first letter of the alphabet']), context:{index:0}
   }},
 
   //*/

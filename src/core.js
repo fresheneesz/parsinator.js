@@ -13,6 +13,10 @@ const ParseResult = proto(function() {
                     // if this.ok is false.
       ] = arguments
   }
+
+  this.copy = function() {
+    return ParseResult(this.ok, this.context, this.value, this.expected, this.error)
+  }
 })
 
 // A Context represents a location in an input string, passed along state that parsers can read and write to,
@@ -64,6 +68,7 @@ const Context = proto(function() {
             // displayed to the user in a list like "Expected to find ..., ..., and ... in the input".
   ) {
     if(!(expected instanceof Set)) {
+      if(!(expected instanceof Array)) expected = [expected]
       expected = new Set(expected)
     }
     return ParseResult(false, this.move(index), undefined, expected)
@@ -209,7 +214,9 @@ const Parser = proto(function() {
   }
 
   // Runs a set of continuations in the form passed to `chain`.
+  // Returns the result of the chain.
   function runContinuations(context, chainContinuations) {
+    const resultValues = []
     let prevResult = {ok:true, context: context} // Set up fake previous result.
     for(let n=0; n<chainContinuations.length; n++) {
       if(prevResult.ok) {
@@ -217,18 +224,36 @@ const Parser = proto(function() {
         const parser = continuation(prevResult.value)
         if(!(parser instanceof Parser)) throw new Error("Function passed to `then` did not return a parser. The function is: "+continuation.toString())
         prevResult = context.parse(parser, prevResult.context)
+        resultValues.push(prevResult.value)
       } else {
         break
       }
     }
-    return prevResult
+
+    const result = prevResult.copy()
+    result.value = resultValues
+    return ParseResult(prevResult.ok, prevResult.context, resultValues, prevResult.expected, prevResult.error)
   }
 
-  // Access and modifies the ParseResult of the parser this is called on.
+  // Access the value returned by the parser this is called on and returns a new parser to continue from.
   // If the parser returns an ok ParseResult, calls `continuation` to get the next parser to continue parsing from.
   // continuation(value) - Should return a Parser.
   this.chain = function(continuation) {
     return Parser(this.name, this.action, this.chainContinuations.concat(continuation))
+  }
+
+  // mapper(value) - A function that receive the value parsed by the calling parser and returns a new value
+  //                 to replace that value. If the previous parser does not succeed, map doesn't modify the ParseResult.
+  this.map = function(mapper) {
+    const parser = this
+    return Parser('map', function() {
+      const result = this.parse(parser, this)
+      if(result.ok) {
+        return this.ok(result.context.index, mapper(result.value))
+      } else {
+        return result
+      }
+    })
   }
 
   // Sets whether or not this Parser is in debug mode.

@@ -24,9 +24,9 @@ module.exports = [
       displayResult(result, {indicatorColor: x => x})
     ]
   }, result: [
+    `Couldn't continue passed line 1 column 1. Expected: "a" or "b".\n` +
     ' 1 | c\n' +
-    '     ^\n' +
-    `Couldn't continue passed line 1 column 1. Expected: "a" or "b".`
+    '     ^'
   ]},
 
   {name: 'displayResult fail on eof', run: function(){
@@ -36,9 +36,9 @@ module.exports = [
       displayResult(result, {indicatorColor: x => x})
     ]
   }, result: [
+    `Couldn't continue passed line 1 column 2. Expected: "b".\n`+
     ' 1 | a\n' +
-    '      ^\n' +
-    `Couldn't continue passed line 1 column 2. Expected: "b".`
+    '      ^'
   ]},
 
   {name: 'displayResult exception', run: function(){
@@ -47,12 +47,13 @@ module.exports = [
     })
     const result = exceptionParser.debug().parse("ab")
     return [
-      displayResult(result, {indicatorColor: x => x}).split('\n').slice(0, 3).join('\n')
+      displayResult(result, {indicatorColor: x => x}).split('\n').slice(0, 4).join('\n')
     ]
   }, result: [
+    "Couldn't continue passed line 1 column 1. \n"+
     ' 1 | ab\n' +
-    '     ^\n' +
-    "Couldn't continue passed line 1 column 1. Got Error: hi"
+    '     ^\n'+
+    'Got Error: hi'
   ]},
 
   {name: 'displayResult multiple lines', run: function(){
@@ -60,15 +61,15 @@ module.exports = [
     const result = simpleParser.debug().parse("a\na\naaaxx\nxxx\nxxxxxx")
     return displayResult(result, {indicatorColor: x => x}).split('\n')
   }, result: [
+    `Couldn't continue passed line 3 column 4. Expected: "bb`,
+    'bbb',
+    'b".',
     ' 1 | a',
     ' 2 | a',
     ' 3 | aaaxx',
     '        ^',
     ' 4 | xxx',
     ' 5 | xxxxxx',
-    `Couldn't continue passed line 3 column 4. Expected: "bb`,
-    'bbb',
-    'b".'
   ]},
 
   {name: 'displayDebugInfo', run: function(){

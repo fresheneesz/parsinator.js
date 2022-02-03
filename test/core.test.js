@@ -4,6 +4,7 @@ var {Parser} = require("../src/core")
 module.exports = [
 
 
+
   //*
   {name: 'ok parser', run: function(){
     const results = []
@@ -77,8 +78,30 @@ module.exports = [
     results.push(parser.parse('testString'))
     return results
   }, result: [
-    true, true, {ok: true, value: 'b', context: {index: 5}}
+    true, true, {ok: true, value: ['a', 'b'], context: {index: 5}}
   ]},
+
+  {name: 'map', run: function(){
+    var parser = Parser('parser', function() {
+      return this.ok(4, 'a')
+    }).map(function(value) {
+      return value+'modified'
+    })
+    return parser.parse('testString')
+  }, result: {
+    ok: true, value: 'amodified', context: {index: 4}
+  }},
+
+  {name: 'map error', run: function(){
+    var parser = Parser('parser', function() {
+      return this.fail(4, ['a'])
+    }).map(function(value) {
+      return value+'modified'
+    })
+    return parser.parse('testString')
+  }, result: {
+    ok: false, value: undefined, context: {index: 4}, expected: new Set(['a'])
+  }},
 
   {name: 'ok parser state', run: function(){
     const results = []
@@ -176,7 +199,7 @@ module.exports = [
     })
     return x.debug().parse('ignored').context.debugRecord
   }, result: {
-    name: 'chain', startIndex: 0, result: {ok: true, context:{index:3}, value: 'xyz'}, subRecords: [
+    name: 'chain', startIndex: 0, result: {ok: true, context:{index:3}, value: ['x', 'xy', 'xyz']}, subRecords: [
       {name: 'x', startIndex: 0, result: {ok: true, context:{index:1}, value: 'x'}},
       {name: 'y', startIndex: 1, result: {ok: true, context:{index:2}, value: 'xy'}},
       {name: 'z', startIndex: 2, result: {ok: true, context:{index:3}, value: 'xyz'}},

@@ -231,3 +231,16 @@ exports.peek = function(parser) {
     }
   })
 }
+
+// This sets a name to describe the parser for use as an `expected` value. Will override the `expected` values of
+// the passed parser in the case it fails.
+exports.desc = function(name, parser) {
+  return Parser('desc('+name+')', function() {
+    const result = this.parse(parser, this)
+    if(result.ok) {
+      return result
+    } else {
+      return this.fail(this.index, [name])
+    }
+  })
+}

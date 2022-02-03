@@ -40,7 +40,6 @@ function importParsers(parsersObject, parserObjectName, declarator) {
     definitions.push(name+' = '+parserObjectName+'["'+name+'"]')
   }
   return declarator+' '+definitions.join(', ')
-
 }
 
 module.exports = {lazy, lazyParsers, importParsers}
