@@ -120,14 +120,17 @@ const Context = proto(function() {
   }
 
   // Adds debug info available before parsing has started.
-  this.addDebugParseInit = function(name, startIndex) {
+  this.addDebugParseInit = function(name, startIndex, startState) {
     this.curDebugSection.name = name
     this.curDebugSection.startIndex = startIndex
+    this.curDebugSection.startState = new Map(startState)
   }
 
   // Adds the result to the debug record.
   this.addDebugResult = function(result) {
-    this.curDebugSection.result = result
+    // Copy this so any state changes don't mutate this record.
+    this.curDebugSection.result = Object.assign({}, result)
+    this.curDebugSection.result.context = result.context.copy()
   }
 })
 
@@ -169,7 +172,7 @@ const Parser = proto(function() {
     let chainContinuations = this.chainContinuations
     const isChain = this.chainContinuations.length !== 0
     if(isChain) {
-      if(context.debug) context.addDebugParseInit("chain", context.index)
+      if(context.debug) context.addDebugParseInit("chain", context.index, context._state)
       chainContinuations = [() => Parser(this.name, this.action)].concat(chainContinuations)
       return maybeTryCatch(context, isInternal, () => {
         const result = runContinuations(context, chainContinuations)
@@ -178,7 +181,7 @@ const Parser = proto(function() {
         return result
       })
     } else {
-      if(context.debug) context.addDebugParseInit(this.name, context.index)
+      if(context.debug) context.addDebugParseInit(this.name, context.index, context._state)
       return maybeTryCatch(context, isInternal, () => {
         const result = this.action.apply(context)
         if(context.debug) context.addDebugResult(result)
@@ -252,7 +255,7 @@ const Parser = proto(function() {
     return Parser('map', function() {
       const result = this.parse(parser, this)
       if(result.ok) {
-        return this.ok(result.context.index, resultMapper.call(result.context, result.value))
+        return result.context.ok(result.context.index, resultMapper.call(result.context, result.value))
       } else {
         return result
       }

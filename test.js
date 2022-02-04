@@ -1,11 +1,12 @@
 const {createParserTests, runTests} = require("./test/testUtils")
 const coreTests = require("./test/core.test")
 const parserTests = createParserTests(require("./test/parsers.test"))
+const moreParsersTests = createParserTests(require("./test/moreParsers.test"))
 const lazyTests = createParserTests(require("./test/lazy.test"))
 const inputInfoCacheTests = require("./test/inputInfoCache.test.js")
 const displayTests = require("./test/display.test.js")
 
-runTests(coreTests.concat(parserTests).concat(lazyTests).concat(inputInfoCacheTests).concat(displayTests))
+runTests(coreTests.concat(parserTests).concat(moreParsersTests).concat(lazyTests).concat(inputInfoCacheTests).concat(displayTests))
 // runTests(coreTests)
 // runTests(lazyTests)
 // runTests(parserTests)

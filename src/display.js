@@ -122,8 +122,9 @@ function displayDebugRecord(indent, record, options) {
   let green = colors.green
   let red = colors.red
   let gray = colors.gray
+  let cyan = colors.cyan
   if(!options.colors) {
-    green = red = gray = (x => x) // noop
+    green = red = gray = cyan = (x => x) // noop
   }
 
   const outputText = []
@@ -136,6 +137,7 @@ function displayDebugRecord(indent, record, options) {
     } else {
       var matchedCharsString = matchedChars+' character'+(matchedChars>1?'s':'')
     }
+
     const inputInfo = options.inputInfoCache.get(record.startIndex)
     const lineColumnNumbers = gray("["+inputInfo.line+":"+inputInfo.column+"] ")
     if(record.result.ok) {
@@ -154,11 +156,18 @@ function displayDebugRecord(indent, record, options) {
 
     if(record.result.ok) {
       var color = green
+      var stateToDisplay = record.result.context._state
     } else {
       var color = red
+      var stateToDisplay = record.startState
     }
 
-    outputText.push(gray(intentString)+color(record.name+": "+matchedString))
+    let stateString = ''
+    if(stateToDisplay.size > 0) {
+      stateString = cyan(' '+mapDisplay(stateToDisplay))
+    }
+
+    outputText.push(gray(intentString)+color(record.name+": "+matchedString+stateString))
     if(record.subRecords) for(let n=0; n<record.subRecords.length; n++) {
       const subRecord = record.subRecords[n]
       // This try is here to catch max callstack exceeded errors, which are likely to happen when a corresponding max
@@ -180,6 +189,14 @@ function displayDebugRecord(indent, record, options) {
     }
   }
   return outputText.join('\n')
+}
+
+function mapDisplay(map) {
+  var results = []
+  for(let [key, value] of map) {
+    results.push(key+':'+value)
+  }
+  return '{'+results.join(', ')+'}'
 }
 
 function strmult(multiplier, str) {

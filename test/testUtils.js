@@ -108,11 +108,19 @@ function partialDeepEqual(testObject, expectedValue) {
     return true
   } else if(expectedValue instanceof Set) {
     if(!(testObject instanceof Set)) return false
-    if(testObject.length !== expectedValue.length) return false
+    if(testObject.size !== expectedValue.size) return false
     for(const value of expectedValue.values()) {
       if(!testObject.has(value)) {
         return false
       }
+    }
+    return true
+  } else if(expectedValue instanceof Map) {
+    if(!(testObject instanceof Map)) return false
+    if(testObject.size !== expectedValue.size) return false
+    for(const value of expectedValue) {
+      const key = value[0]
+      if(!partialDeepEqual(value, [key, testObject.get(key)])) return false
     }
     return true
   } else if(expectedValue instanceof Function) {

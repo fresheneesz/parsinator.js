@@ -1,15 +1,12 @@
 const {
   eof, ok, fail, str, match, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, name, desc, node
 } = require("../src/parsers")
-var {Parser} = require("../src/core")
 var {lazy} = require("../src/lazy")
 
-function modifyState() {
-  return Parser('modifyState', function() {
-    this.set('a', 'x') // The state is being set even tho this is returning a fail. This should never be done.
-    return this.fail(0, 'something else')
-  })
-}
+const modifyState = lazy('modifyState', function() {
+  this.set('a', 'x') // The state is being set even tho this is returning a fail. This should never be done.
+  return fail(0, 'something else')
+})
 const parseBasedOnState = lazy('parseBasedOnState', function() {
   if(this.get('a')) {
     return str(this.get('a'))

@@ -173,7 +173,8 @@ exports.atMost = function(numberOfTimes, parser) {
 
 // Expects the parser to match `numberOfTimes` in a series.
 exports.times = function(numberOfTimes, parser) {
-  return _timesInternal('times', parser, {atLeast: numberOfTimes, atMost: numberOfTimes})
+  if(numberOfTimes === undefined) throw new Error('times not passed a numberOfTimes: '+numberOfTimes)
+  return _timesInternal('times('+numberOfTimes+')', parser, {atLeast: numberOfTimes, atMost: numberOfTimes})
 }
 
 // Allows a parser to match between `atLeast` and `atMost` times in a series.

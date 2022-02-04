@@ -1,4 +1,4 @@
-var {Parser} = require("../src/core")
+var {Parser, isParser, getPossibleParser} = require("../src/core")
 
 
 module.exports = [
@@ -66,11 +66,14 @@ module.exports = [
     const results = []
     let firstParseResult
     var parser = Parser('parser', function() {
+      this.set('x', 3)
       firstParseResult = this.ok(4, 'a')
       return firstParseResult
     }).chain(function(value) {
       results.push(value === firstParseResult.value)
+      results.push(this.get('x') === 3)
       return Parser('parser', function() {
+        results.push(this.get('x') === 3)
         results.push(this.index === firstParseResult.context.index)
         return this.ok(5, 'b')
       })
@@ -78,19 +81,20 @@ module.exports = [
     results.push(parser.parse('testString'))
     return results
   }, result: [
-    true, true, {ok: true, value: ['a', 'b'], context: {index: 5}}
+    true, true, true, true, {ok: true, value: ['a', 'b'], context: {index: 5}}
   ]},
 
   {name: 'result', run: function(){
     var parser = Parser('parser', function() {
+      this.set('x', 3)
       return this.ok(4, 'a')
     }).result(function(value) {
-      return value+' modified '+
+      return value+' state '+this.get('x')+' modified '+
              this.index // result should have access to the current context.
     })
     return parser.parse('testString')
   }, result: {
-    ok: true, value: 'a modified 4', context: {index: 4}
+    ok: true, value: 'a state 3 modified 4', context: {index: 4, _state: new Map([['x', 3]])}
   }},
 
   {name: 'result error', run: function(){
@@ -106,14 +110,15 @@ module.exports = [
 
   {name: 'map', run: function(){
     var parser = Parser('parser', function() {
+      this.set('x', 3)
       return this.ok(4, [1,2,3])
     }).map(function (value, n) {
-      return value+' '+n+' '+
+      return value+' '+this.get('x')+' '+n+' '+
              this.index // map should have access to the current context.
     })
     return parser.parse('testString')
   }, result: {
-    ok: true, value: ['1 0 4', '2 1 4', '3 2 4'], context: {index: 4}
+    ok: true, value: ['1 3 0 4', '2 3 1 4', '3 3 2 4'], context: {index: 4, _state: new Map([['x', 3]])}
   }},
 
   {name: 'map error', run: function(){
@@ -175,69 +180,91 @@ module.exports = [
 
   {name: 'debugger: fail output', run: function(){
     var parser = Parser('parser', function() {
+      this.set('a', 1)
       return this.fail(1, ['x','y','z'])
     })
     return parser.debug().parse('ignored').context.debugRecord
   }, result: {
-    name: 'parser', startIndex: 0, result: {ok: false, context:{index:1}, expected: new Set(['x','y','z'])}
+    name: 'parser', startIndex: 0, result: {ok: false, context:{index:1, _state:new Map([['a',1]])}, expected: new Set(['x','y','z'])}
   }},
 
   {name: 'debugger: output for alternatives', run: function(){
     var x = Parser('x', function() {
+      this.set('a', 1)
       return this.fail(0, ['x'])
     })
     var y = Parser('y', function() {
+      this.set('a', 2)
       return this.ok(1, 'y')
     })
     var parser = Parser('parser', function() {
+      this.set('a', 0)
       this.parse(x, this)
       return this.parse(y, this)
     })
     return parser.debug().parse('ignored').context.debugRecord
   }, result: {
-    name: 'parser', startIndex: 0, result: {ok: true, context:{index:1}, value: 'y'}, subRecords: [
-      {name: 'x', startIndex: 0, result: {ok: false, context:{index:0}, expected: new Set(['x'])}},
-      {name: 'y', startIndex: 0, result: {ok: true, context:{index:1}, value: 'y'}}
+    name: 'parser', startIndex: 0, startState:new Map([]),
+    result: {ok: true, context:{index:1, _state:new Map([['a',2]])}, value: 'y'}, subRecords: [
+      {name: 'x', startIndex: 0, startState:new Map([['a', 0]]),
+       result: {ok: false, context:{index:0, _state:new Map([['a',1]])}, expected: new Set(['x'])}},
+      {name: 'y', startIndex: 0, startState:new Map([['a', 0]]),
+       result: {ok: true, context:{index:1, _state:new Map([['a',2]])}, value: 'y'}}
     ]
   }},
 
   {name: 'debugger: output for series', run: function(){
     var x = Parser('x', function() {
+      this.set('a', 1)
       return this.ok(1, 'x')
     })
     var y = Parser('y', function() {
+      this.set('a', 2)
       return this.ok(2, 'y')
     })
     var parser = Parser('parser', function() {
+      this.set('a', 0)
       const xResult = this.parse(x, this)
       return this.parse(y, xResult.context)
     })
     return parser.debug().parse('ignored').context.debugRecord
   }, result: {
-    name: 'parser', startIndex: 0, result: {ok: true, context:{index:2}, value: 'y'}, subRecords: [
-      {name: 'x', startIndex: 0, result: {ok: true, context:{index:1}, value: 'x'}},
-      {name: 'y', startIndex: 1, result: {ok: true, context:{index:2}, value: 'y'}}
+    name: 'parser', startIndex: 0, startState:new Map([]),
+    result: {ok: true, context:{index:2, _state:new Map([['a',2]])}, value: 'y'}, subRecords: [
+      {name: 'x', startIndex: 0, startState:new Map([['a', 0]]),
+       result: {ok: true, context:{index:1, _state:new Map([['a',1]])}, value: 'x'}},
+      {name: 'y', startIndex: 1, startState:new Map([['a', 1]]),
+       result: {ok: true, context:{index:2, _state:new Map([['a',2]])}, value: 'y'}}
     ]
   }},
 
   {name: 'debugger: output for chain', run: function(){
     var x = Parser('x', function() {
+      this.set('a', 1)
       return this.ok(1, 'x')
-    }).chain((value) => {
+    }).chain(function(value) {
+      this.set('a', 2)
       return Parser('y', function() {
+        this.set('a', 3)
         return this.ok(2, value+'y')
       })
-    }).chain((value) => {
+    }).chain(function(value) {
+      this.set('a', 4)
       return Parser('z', function() {
+        this.set('a', 5)
         return this.ok(3, value+'z')
       })
     })
     return x.debug().parse('ignored').context.debugRecord
   }, result: {
-    name: 'chain', startIndex: 0, result: {ok: true, context:{index:3}, value: ['x', 'xy', 'xyz']}, subRecords: [
-      {name: 'x', startIndex: 0, result: {ok: true, context:{index:1}, value: 'x'}},
-      {name: 'y', startIndex: 1, result: {ok: true, context:{index:2}, value: 'xy'}},
-      {name: 'z', startIndex: 2, result: {ok: true, context:{index:3}, value: 'xyz'}},
+    name: 'chain', startIndex: 0, startState:new Map([]),
+    result: {ok: true, context:{index:3, _state:new Map([['a',5]])}, value: ['x', 'xy', 'xyz']}, subRecords: [
+      {name: 'x', startIndex: 0, startState:new Map([]),
+       result: {ok: true, context:{index:1, _state:new Map([['a',1]])}, value: 'x'}},
+      {name: 'y', startIndex: 1, startState:new Map([['a',2]]),
+       result: {ok: true, context:{index:2, _state:new Map([['a',3]])}, value: 'xy'}},
+      {name: 'z', startIndex: 2, startState:new Map([['a',4]]),
+       result: {ok: true, context:{index:3, _state:new Map([['a',5]])}, value: 'xyz'}},
     ]
   }},
 
@@ -266,6 +293,25 @@ module.exports = [
     ]
   }},
 
+  {name: 'isParser', run: function(){
+    return [
+      isParser(Parser('x', function(){})),
+      isParser(()=>Parser('x', function(){})),
+      isParser(3)
+    ]
+  }, result: [
+    true, true, false
+  ]},
+
+  {name: 'getPossibleParser', run: function(){
+    return [
+      getPossibleParser(Parser('x', function(){})).name,
+      getPossibleParser(()=>Parser('y', function(){})).name,
+      getPossibleParser(3)
+    ]
+  }, result: [
+    'x', 'y', 3
+  ]},
+
   //*/
 ]
-
