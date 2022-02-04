@@ -1,6 +1,8 @@
-const {ok, str, ser, match} = require("../src/parsers")
-var {lazyParsers, importParsers} = require("../src/lazy")
-var {displayResult} = require("../src/display")
+const {
+  ok, ser, str, match,
+  lazyParsers, importParsers,
+  displayResult
+} = require("../parsinator")
 
 const parsers = lazyParsers({
   integer: function() {

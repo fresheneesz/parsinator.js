@@ -1,6 +1,8 @@
-const {str, ser} = require("../src/parsers")
-var {lazyParsers, importParsers} = require("../src/lazy")
-var {displayResult} = require("../src/display")
+const {
+  str, ser,
+  lazyParsers, importParsers,
+  displayResult
+} = require("../parsinator")
 
 const parsers = lazyParsers({
   apple: function() {
