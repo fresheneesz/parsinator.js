@@ -1,4 +1,4 @@
-const {Parser} = require("./core")
+const {Parser, isParser, getPossibleParser} = require("./core")
 
 // Matches the end of input, returns undefined.
 exports.eof = function() {
@@ -57,7 +57,7 @@ exports.match = function(regexp) {
       return this.ok(end, string)
     }
     return this.fail(this.index, [regexp.toString()])
-  });
+  })
 }
 
 // Runs a series of parsers in sequence.
@@ -74,11 +74,9 @@ exports.ser = function(...parsers) {
   // Normalize any labeled parser and extract labels
   const labels = []
   parsers = parsers.map((parser, n) => {
-    if(parsers[n] instanceof Parser) {
+    if(isParser(parser)) {
       return parser
-    } else if(parsers[n] instanceof Function || !(parsers[n] instanceof Object)) {
-      throw new Error("ser passed something other than a parser or labeled parser object: "+parsers[n]+".")
-    } else {
+    } else if(parser instanceof Object && !(parser instanceof Function)) {
       let found = false, parserToReturn
       for(let curLabel in parser) {
         if(found) {
@@ -89,9 +87,14 @@ exports.ser = function(...parsers) {
         }
         found = true
         parserToReturn = parser[curLabel]
+        if(!isParser(parserToReturn)) {
+          throw new Error("ser passed something other than a parser as label '"+curLabel+"': "+parser+".")
+        }
         labels[n] = curLabel
       }
       return parserToReturn
+    } else {
+      throw new Error("ser passed something other than a parser or labeled parser object: "+parser+".")
     }
   })
 
@@ -128,6 +131,12 @@ exports.ser = function(...parsers) {
 exports.alt = function(...parsers) {
   if(parsers.length === 0) throw new Error("Call to `ser` passes no parsers.")
 
+  // Validate parsers input.
+  parsers = parsers.map((parser) => {
+    maybeInvalidParserException('alt', parser)
+    return parser
+  })
+
   return Parser('alt', function() {
     let expected = new Set, furthest = this.index
     for(let n=0; n<parsers.length; n++) {
@@ -147,9 +156,9 @@ exports.alt = function(...parsers) {
   })
 }
 
-// Expects the parser to match `numberOfTimes` in a series.
-exports.times = function(numberOfTimes, parser) {
-  return _timesInternal('times', parser, {atLeast: numberOfTimes, atMost: numberOfTimes})
+// Allows a parser to match 0 or more times in a series.
+exports.many = function(parser) {
+  return _timesInternal('many', parser)
 }
 
 // Expects the parser to match at least `numberOfTimes` in a series.
@@ -162,14 +171,14 @@ exports.atMost = function(numberOfTimes, parser) {
   return _timesInternal('atMost', parser, {atMost: numberOfTimes})
 }
 
+// Expects the parser to match `numberOfTimes` in a series.
+exports.times = function(numberOfTimes, parser) {
+  return _timesInternal('times', parser, {atLeast: numberOfTimes, atMost: numberOfTimes})
+}
+
 // Allows a parser to match between `atLeast` and `atMost` times in a series.
 exports.timesBetween = function(atLeast, atMost, parser) {
   return _timesInternal('timesBetween', parser, {atLeast, atMost})
-}
-
-// Allows a parser to match 0 or more times in a series.
-exports.many = function(parser) {
-  return _timesInternal('many', parser)
 }
 
 // Runs a parser a number of times with some constraints.
@@ -180,6 +189,8 @@ function _timesInternal(
               // * atLeast - (Optional) Fails if the parser doesn't match this many times.
               // * atMost - (Optional) Limits the number of matches to this number.
 ) {
+  maybeInvalidParserException(name, parser)
+
   const maxParses = constraints && constraints.atMost || Infinity
   const minParses = constraints && constraints.atLeast || 0
 
@@ -210,6 +221,7 @@ function _timesInternal(
 // Returns a parser that returns true if the passed in parser doesn't match.
 // Doesn't return a value and doesn't advance the index.
 exports.not = function(parser) {
+  maybeInvalidParserException('not', parser)
   return Parser('not', function() {
     const result = this.parse(parser, this)
     if(result.ok) {
@@ -222,6 +234,7 @@ exports.not = function(parser) {
 
 // Returns a parser that consumes no input and fails with an expectation or whatever.
 exports.peek = function(parser) {
+  maybeInvalidParserException('peek', parser)
   return Parser('peek', function() {
     const result = this.parse(parser, this)
     if(result.ok) {
@@ -232,10 +245,19 @@ exports.peek = function(parser) {
   })
 }
 
+// Pass through parser that simply renames the parser. Mostly useful for debugging.
+exports.name = function(name, parser) {
+  maybeInvalidParserException('name', parser)
+  parser.name = name
+  return parser
+}
+
 // This sets a name to describe the parser for use as an `expected` value. Will override the `expected` values of
 // the passed parser in the case it fails.
 exports.desc = function(name, parser) {
-  return Parser('desc('+name+')', function() {
+  const parserName = 'desc('+name+')'
+  maybeInvalidParserException(parserName, parser)
+  return Parser(parserName, function() {
     const result = this.parse(parser, this)
     if(result.ok) {
       return result
@@ -243,4 +265,24 @@ exports.desc = function(name, parser) {
       return this.fail(this.index, [name])
     }
   })
+}
+
+exports.node = function(name, parser) {
+  const thisParserName = 'node('+name+')'
+  maybeInvalidParserException(thisParserName, parser)
+  parser = getPossibleParser(parser)
+  return Parser(thisParserName, function() {
+    const start = this.index
+    const transformedParser = parser.result(function(value) {
+      return {name:name, value, start, end:this.index}
+    })
+    return this.parse(transformedParser, this)
+  })
+}
+
+// name - The name of the parser this is being called from.
+function maybeInvalidParserException(name, parser) {
+  if(!isParser(parser)) {
+    throw new Error(name+" passed something other than a parser: "+parser)
+  }
 }

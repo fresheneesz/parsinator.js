@@ -81,21 +81,56 @@ module.exports = [
     true, true, {ok: true, value: ['a', 'b'], context: {index: 5}}
   ]},
 
-  {name: 'map', run: function(){
+  {name: 'result', run: function(){
     var parser = Parser('parser', function() {
       return this.ok(4, 'a')
-    }).map(function(value) {
+    }).result(function(value) {
+      return value+' modified '+
+             this.index // result should have access to the current context.
+    })
+    return parser.parse('testString')
+  }, result: {
+    ok: true, value: 'a modified 4', context: {index: 4}
+  }},
+
+  {name: 'result error', run: function(){
+    var parser = Parser('parser', function() {
+      return this.fail(4, ['a'])
+    }).result(function(value) {
       return value+'modified'
     })
     return parser.parse('testString')
   }, result: {
-    ok: true, value: 'amodified', context: {index: 4}
+    ok: false, value: undefined, context: {index: 4}, expected: new Set(['a'])
+  }},
+
+  {name: 'map', run: function(){
+    var parser = Parser('parser', function() {
+      return this.ok(4, [1,2,3])
+    }).map(function (value, n) {
+      return value+' '+n+' '+
+             this.index // map should have access to the current context.
+    })
+    return parser.parse('testString')
+  }, result: {
+    ok: true, value: ['1 0 4', '2 1 4', '3 2 4'], context: {index: 4}
   }},
 
   {name: 'map error', run: function(){
     var parser = Parser('parser', function() {
       return this.fail(4, ['a'])
-    }).map(function(value) {
+    }).result(function(value) {
+      return value+'modified'
+    })
+    return parser.parse('testString')
+  }, result: {
+    ok: false, value: undefined, context: {index: 4}, expected: new Set(['a'])
+  }},
+
+  {name: 'map not passed array', run: function(){
+    var parser = Parser('parser', function() {
+      return this.fail(4, 'a')
+    }).result(function(value) {
       return value+'modified'
     })
     return parser.parse('testString')

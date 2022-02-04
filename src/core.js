@@ -88,6 +88,7 @@ const Context = proto(function() {
   // parser - The parser to continue parsing with.
   // curContext - The context to continue parsing from.
   this.parse = function(parser, curContext) {
+    parser = getPossibleParser(parser)
     if(this === curContext) {
       curContext = this.copy()
     }
@@ -221,7 +222,7 @@ const Parser = proto(function() {
     for(let n=0; n<chainContinuations.length; n++) {
       if(prevResult.ok) {
         const continuation = chainContinuations[n]
-        const parser = continuation(prevResult.value)
+        const parser = continuation.call(prevResult.context, prevResult.value)
         if(!(parser instanceof Parser)) throw new Error("Function passed to `then` did not return a parser. The function is: "+continuation.toString())
         prevResult = context.parse(parser, prevResult.context)
         resultValues.push(prevResult.value)
@@ -237,22 +238,34 @@ const Parser = proto(function() {
 
   // Access the value returned by the parser this is called on and returns a new parser to continue from.
   // If the parser returns an ok ParseResult, calls `continuation` to get the next parser to continue parsing from.
-  // continuation(value) - Should return a Parser.
+  // continuation(value) - Should return a Parser. Also gets the current Context as `this`.
   this.chain = function(continuation) {
     return Parser(this.name, this.action, this.chainContinuations.concat(continuation))
   }
 
+  // Transforms the result into a new result.
   // mapper(value) - A function that receive the value parsed by the calling parser and returns a new value
   //                 to replace that value. If the previous parser does not succeed, map doesn't modify the ParseResult.
-  this.map = function(mapper) {
+  //                 Also gets the current Context as `this`.
+  this.result = function(resultMapper) {
     const parser = this
     return Parser('map', function() {
       const result = this.parse(parser, this)
       if(result.ok) {
-        return this.ok(result.context.index, mapper(result.value))
+        return this.ok(result.context.index, resultMapper.call(result.context, result.value))
       } else {
         return result
       }
+    })
+  }
+
+  // Maps list results. Just a convenience method.
+  this.map = function(mapper) {
+    return this.result(function(values) {
+      const context = this
+      return values.map(function() {
+        return mapper.apply(context, arguments)
+      })
     })
   }
 
@@ -264,6 +277,24 @@ const Parser = proto(function() {
   }
 })
 
+function isParser(parser) {
+  return parser instanceof Parser || parser instanceof Function && parser() instanceof Parser
+}
+
+// Returns a Parser if one can be found as either:
+// * The passed argument, or
+// * the result of calling the passed argument as a function with no arguments.
+function getPossibleParser(parser) {
+  if(parser instanceof Function) {
+    let possibleParser = parser()
+    if(possibleParser instanceof Parser) {
+      return possibleParser
+    }
+  }
+  // else
+  return parser
+}
+
 // An error that holds a ParseResult.
 const InternalError = proto(Error, function() {
   this.init = function(result) {
@@ -271,4 +302,4 @@ const InternalError = proto(Error, function() {
   }
 })
 
-module.exports = {Parser}
+module.exports = {Parser, isParser, getPossibleParser}

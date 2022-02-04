@@ -5,13 +5,20 @@ const InputInfoCache = require("./InputInfoCache")
 
 exports.displayResult = function(result, options) {
   options = Object.assign({
-    indicatorColor: colors.red, inputInfoCache: InputInfoCache(result.context.input)
+    indicatorColor: colors.red,
+    colors: true, // To pass to displayDebugInfo.
+    inputInfoCache: InputInfoCache(result.context.input), displayDebug: true
   }, options)
   if(result.ok) {
-    return displaySuccess(result, options)
+    var display = displaySuccess(result, options)
   } else {
-    return displayError(result, options)
+    var display = displayError(result, options)
   }
+
+  if(options.displayDebug && result.context.debugRecord !== undefined) {
+    display += '\n'+displayDebugInfo(result, {colors:options.colors})
+  }
+  return display
 }
 
 function displaySuccess(result, options) {
@@ -102,7 +109,7 @@ function displayError(result, options) {
   }
 }
 
-exports.displayDebugInfo = function(result, options) {
+const displayDebugInfo = exports.displayDebugInfo = function(result, options) {
   const debugRecord = result.context.debugRecord
   options = Object.assign({
     colors: true, maxMatchChars: 30, maxSubrecordDepth: 75,

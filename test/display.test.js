@@ -59,17 +59,20 @@ module.exports = [
   {name: 'displayResult multiple lines', run: function(){
     const simpleParser = ser(str('a\na\naaa'), str('bb\nbbb\nb'))
     const result = simpleParser.debug().parse("a\na\naaaxx\nxxx\nxxxxxx")
-    return displayResult(result, {indicatorColor: x => x}).split('\n')
+    return displayResult(result, {indicatorColor: x => x, colors:false}).split('\n')
   }, result: [
-    `Couldn't continue passed line 3 column 4. Expected: "bb`,
-    'bbb',
-    'b".',
-    ' 1 | a',
-    ' 2 | a',
-    ' 3 | aaaxx',
-    '        ^',
-    ' 4 | xxx',
-    ' 5 | xxxxxx',
+   `Couldn't continue passed line 3 column 4. Expected: "bb`,
+   'bbb',
+   'b".',
+   ' 1 | a',
+   ' 2 | a',
+   ' 3 | aaaxx',
+   '        ^',
+   ' 4 | xxx',
+   ' 5 | xxxxxx',
+   'ser: [1:1] failed "a\\na\\naaaxx\\nxxx\\nxxxxxx"',
+   ' str("a\\na\\naaa"): [1:1] matched "a\\na\\naaa"',
+   ' str("bb\\nbbb\\nb"): [3:4] failed "xx\\nxxx\\nxxxxxx"'
   ]},
 
   {name: 'displayDebugInfo', run: function(){

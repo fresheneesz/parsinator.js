@@ -1,5 +1,5 @@
 const {
-  eof, ok, fail, str, match, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, desc
+  eof, ok, fail, str, match, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, name, desc, node
 } = require("../src/parsers")
 var {Parser} = require("../src/core")
 var {lazy} = require("../src/lazy")
@@ -178,12 +178,28 @@ module.exports = [
     ok: false, expected: new Set(['a']), context:{index:0}
   }},
 
+  // name
+  {name: 'name', parser: name('x', str('a')), input: "a", result: {
+    ok: true, value: 'a', context:{index:1}
+  }},
+  {name: 'name fail', parser: name('jaweij', str('a')).debug(), input: "b", result: {
+    ok: false, expected: new Set(['a']), context:{index:0, debugRecord: {name: 'jaweij'}}
+  }},
+
   // desc
   {name: 'desc', parser: desc('x', str('a')), input: "a", result: {
     ok: true, value: 'a', context:{index:1}
   }},
   {name: 'desc fail', parser: desc('the first letter of the alphabet', str('a')), input: "b", result: {
     ok: false, expected: new Set(['the first letter of the alphabet']), context:{index:0}
+  }},
+
+  // node
+  {name: 'node', parser: node('nodeName', str('a')), input: "a", result: {
+    ok: true, value: {name: 'nodeName', value: 'a', start: 0, end: 1}, context:{index:1}
+  }},
+  {name: 'node fail', parser: node('nodeName', str('a')), input: "b", result: {
+    ok: false, expected: new Set(['a']), context:{index:0}
   }},
 
   //*/
