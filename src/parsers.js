@@ -112,7 +112,7 @@ exports.ser = function(...parsers) {
       }
     }
 
-    return this.ok(lastResult.context.index, results)
+    return lastResult.context.ok(lastResult.context.index, results)
   })
 }
 
@@ -145,24 +145,24 @@ exports.alt = function(...parsers) {
 }
 
 exports.many = function(parser) {
-  return _timesInternal('many', parser)
+  return _timesInternal('many('+parser.name+')', parser)
 }
 
 exports.atLeast = function(numberOfTimes, parser) {
-  return _timesInternal('atLeast', parser, {atLeast: numberOfTimes})
+  return _timesInternal('atLeast('+parser.name+')', parser, {atLeast: numberOfTimes})
 }
 
 exports.atMost = function(numberOfTimes, parser) {
-  return _timesInternal('atMost', parser, {atMost: numberOfTimes})
+  return _timesInternal('atMost('+parser.name+')', parser, {atMost: numberOfTimes})
 }
 
 exports.times = function(numberOfTimes, parser) {
   if(numberOfTimes === undefined) throw new Error('times not passed a numberOfTimes: '+numberOfTimes)
-  return _timesInternal('times('+numberOfTimes+')', parser, {atLeast: numberOfTimes, atMost: numberOfTimes})
+  return _timesInternal('times('+numberOfTimes+','+parser.name+')', parser, {atLeast: numberOfTimes, atMost: numberOfTimes})
 }
 
 exports.timesBetween = function(atLeast, atMost, parser) {
-  return _timesInternal('timesBetween', parser, {atLeast, atMost})
+  return _timesInternal('timesBetween('+parser.name+')', parser, {atLeast, atMost})
 }
 
 // Runs a parser a number of times with some constraints.
@@ -198,7 +198,7 @@ function _timesInternal(
         }
       }
     }
-    return this.ok(lastResult.context.index, results)
+    return lastResult.context.ok(lastResult.context.index, results)
   })
 }
 

@@ -1,7 +1,7 @@
 // This is a file for higher-level parsers. These parsers don't even depend directly on core, but are composed of the
 // basic parsers in parsers.js. The exports of this file are documented in ../docs/parsers.md
 
-const {Parser} = require("./core")
+const {Parser, getPossibleParser} = require("./core")
 const {ser, many, timesBetween, name} = require("./parsers")
 
 exports.listOf = function(separatorParser, primaryParser, constraints) {
@@ -13,7 +13,10 @@ exports.listOf = function(separatorParser, primaryParser, constraints) {
     var atMost1 = constraints.atMost >= 1 ? 1 : 0
     var atMost2 = constraints.atMost - 1
   }
-  return name(`listOf(${primaryParser}, ${separatorParser})`,
+
+  separatorParser = getPossibleParser(separatorParser)
+  primaryParser = getPossibleParser(primaryParser)
+  return name(`listOf(${separatorParser.name}, ${primaryParser.name})`,
     ser(
       timesBetween(0, atMost1, primaryParser),
       timesBetween(atLeast2, atMost2,
@@ -25,7 +28,7 @@ exports.listOf = function(separatorParser, primaryParser, constraints) {
 
 exports.seriesSepBy = function(separatorParser, ...parsers) {
   let lastParser = parsers[0]
-  if(parsers.length === 1) return parsers[0].value(value => [value])
+  if(parsers.length === 1) return getPossibleParser(parsers[0]).value(value => [value])
   for(let n=1; n<parsers.length; n++) {
     const parser = parsers[n]
     lastParser = lastParser.chain(function() {

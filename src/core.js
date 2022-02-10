@@ -37,7 +37,6 @@ const Context = proto(function() {
     }
   }
 
-  // Returns a new context where its `index` has been moved ahead.
   this.move = function(index) {
     if(index < this.index) {
       throw new Error("Parser attempted to move an index backward to index: "+index+" from index"+this.index+".")
@@ -49,12 +48,10 @@ const Context = proto(function() {
     return newContext
   }
 
-  // Returns a copy of the context.
   this.copy = function() {
     return this.move(this.index)
   }
 
-  // Indicates the parse succeeded and returns a value from the parser.
   this.ok = function(
     index, // The new 'next' index. The parser succeeded up through the previous index.
     value  // The resulting value to return from the parser.
@@ -62,7 +59,6 @@ const Context = proto(function() {
     return ParseResult(true, this.move(index), value)
   }
 
-  // Indicates the parse failed and records error information.
   this.fail = function(
     index, // The farthest index it was able to successfully parse to. The parser
            // succeeded up through the previous index.
@@ -86,9 +82,6 @@ const Context = proto(function() {
     this._state.set(key, value)
   }
 
-  // Runs a sub parser (a parser that is "part of" or a child parser of the parser this context came from).
-  // parser - The parser to continue parsing with.
-  // curContext - The context to continue parsing from.
   this.parse = function(parser, curContext) {
     if(!curContext) throw new Error("Context.parse not passed a curContext.")
     parser = getPossibleParser(parser)
@@ -237,7 +230,7 @@ const Parser = proto(function() {
       if(prevResult.ok) {
         const continuation = chainContinuations[n]
         const parser = continuation.call(prevResult.context, prevResult.value)
-        if(!(parser instanceof Parser)) throw new Error("Function passed to `then` did not return a parser. The function is: "+continuation.toString())
+        if(!(parser instanceof Parser)) throw new Error("Function passed to `chain` did not return a parser. The function is: "+continuation.toString())
         prevResult = context.parse(parser, prevResult.context)
         resultValues.push(prevResult.value)
       } else {
@@ -247,7 +240,7 @@ const Parser = proto(function() {
 
     const result = prevResult.copy()
     result.value = resultValues
-    return ParseResult(prevResult.ok, prevResult.context, resultValues, prevResult.expected, prevResult.error)
+    return result
   }
 
   this.chain = function(continuation) {

@@ -126,12 +126,8 @@ All of the exports of these files are combined and exposed through the main scri
 
 ## Todo
 
-* Change input into an interface so streaming can be supported.
+* Support streaming input.
+* Mention somewhere to be careful about using new style lambda functions, because they don't retain their own `this` and thus won't be able to access the current context (but may instead access an upper context).
 * Inform people:
   * https://github.com/jneen/parsimmon/issues/143
   * https://github.com/jneen/parsimmon/issues/230
-* parsimmon v2 discussion:
-  * It should be easy to annotate all values with index ranges, for high fidelity source mapping.
-* write down information about how to do naughty or.
-* Write down that its important that Context.parse is used in any Parser that wants to run a sub parser, for debugability reasons.
-* Note that validating parameters passed to a parser should be done outside of a Parser if possible, for better exception stack traces.

@@ -15,6 +15,12 @@ const parseBasedOnState = lazy('parseBasedOnState', function() {
   }
 })
 
+const x = lazy('x', function() {
+  return str('x').chain(function(value) {
+    this.set('state', 3)
+    return ok(value)
+  })
+})
 
 module.exports = [
 
@@ -83,6 +89,9 @@ module.exports = [
   }},
   {name: 'ser fail end', parser: ser(str('a'),str('b'),str('c')), input: "abd", result: {
     ok: false, expected: new Set(["c"])
+  }},
+  {name: 'ser retains state', parser: ser(x,str('y')), input: "xy", result: {
+    ok: true, context:{index:2, _state: new Map([['state', 3]])}
   }},
   // Note that this fakes a parser just to make sure the exception is caught within the test runner.
   {name: 'ser no parsers passed', parser: {parse: ()=>ser()}, input: "", exception:
@@ -157,6 +166,9 @@ module.exports = [
   }},
   {name: 'many no matches', parser: many(str('a')), input: "bbb", result: {
     ok: true, value: []
+  }},
+  {name: 'many retains state', parser: many(x), input: "xx", result: {
+    ok: true, context:{index:2, _state: new Map([['state', 3]])}
   }},
 
   // not
