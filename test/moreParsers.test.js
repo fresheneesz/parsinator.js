@@ -20,6 +20,12 @@ module.exports = [
   {name: 'listOf no match', parser: listOf(str(','), str('a')), input: "b,a,a,a", result: {
     ok: true, value: [] // This parser can't really fail.
   }},
+  {name: 'listOf too few', parser: listOf(str(','), str('a'), {atLeast:3}), input: "a,a", result: {
+    ok: false, expected: new Set([','])
+  }},
+  {name: 'listOf more than max', parser: listOf(str(','), str('a'), {atMost:2}), input: "a,a,a", result: {
+    ok: true, value: ['a','a']
+  }},
 
   // seriesSepBy
   {name: 'seriesSepBy one item', parser: seriesSepBy(str(','), str('a')), input: "a", result: {
@@ -45,4 +51,3 @@ module.exports = [
 
   //*/
 ]
-

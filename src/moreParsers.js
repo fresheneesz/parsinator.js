@@ -5,15 +5,21 @@ const {Parser} = require("./core")
 const {ser, many, timesBetween, name} = require("./parsers")
 
 exports.listOf = function(separatorParser, primaryParser, constraints) {
+  constraints = constraints || {}
+  if(constraints.atLeast) {
+    var atLeast2 = constraints.atLeast - 1
+  }
+  if(constraints.atMost) {
+    var atMost1 = constraints.atMost >= 1 ? 1 : 0
+    var atMost2 = constraints.atMost - 1
+  }
   return name(`listOf(${primaryParser}, ${separatorParser})`,
-    timesBetween(0, 1,
-      ser(
-        primaryParser,
-        timesBetween(constraints.atLeast, constraints.atMost,
-          ser(separatorParser,{primaryParser})
-        ).map(value => value.primaryParser)
-      ).value(values => [values[0]].concat(values[1]))
-    ).value(values => values[0] || [])
+    ser(
+      timesBetween(0, atMost1, primaryParser),
+      timesBetween(atLeast2, atMost2,
+        ser(separatorParser,{primaryParser})
+      ).map(value => value.primaryParser)
+    ).value(values => values[0].concat(values[1]))
   )
 }
 
@@ -57,7 +63,7 @@ exports.memoize = function(parserFunction, options) {
         // different input. If the result was stored and returned directly, it could cause a parser run on a different input
         // (where the memoized functions happen to match at the same index), it would *change* the input. Which would
         // be bad.
-        lastMemoryLevel.set(lastKey, {index: memoryResult.context.index, value: memoryResult.value})
+        lastMemoryLevel.set(lastKey, {index: result.context.index, value: result.value})
         return result
       }
     })

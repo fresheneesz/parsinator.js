@@ -8,10 +8,11 @@ const colors = require("colors")
 exports.displayResult = function(result, options) {
   options = Object.assign({
     colors: true, // To pass to displayDebugInfo.
+    indicatorColor: colors.red,
     inputInfoCache: InputInfoCache(result.context.input), displayDebug: true,
     /*stateDisplay: undefined*/ // To pass to displayDebugInfo.
   }, options)
-  options.indicatorColor = options.colors? colors.red : text => text
+  options.indicatorColor = options.colors? options.indicatorColor : text => text
 
   if(result.ok) {
     var display = displaySuccess(result, options)
