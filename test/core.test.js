@@ -88,7 +88,7 @@ module.exports = [
     var parser = Parser('parser', function() {
       this.set('x', 3)
       return this.ok(4, 'a')
-    }).result(function(value) {
+    }).value(function(value) {
       return value+' state '+this.get('x')+' modified '+
              this.index // result should have access to the current context.
     })
@@ -100,7 +100,7 @@ module.exports = [
   {name: 'result error', run: function(){
     var parser = Parser('parser', function() {
       return this.fail(4, ['a'])
-    }).result(function(value) {
+    }).value(function(value) {
       return value+'modified'
     })
     return parser.parse('testString')
@@ -124,7 +124,7 @@ module.exports = [
   {name: 'map error', run: function(){
     var parser = Parser('parser', function() {
       return this.fail(4, ['a'])
-    }).result(function(value) {
+    }).value(function(value) {
       return value+'modified'
     })
     return parser.parse('testString')
@@ -135,7 +135,7 @@ module.exports = [
   {name: 'map not passed array', run: function(){
     var parser = Parser('parser', function() {
       return this.fail(4, 'a')
-    }).result(function(value) {
+    }).value(function(value) {
       return value+'modified'
     })
     return parser.parse('testString')

@@ -23,9 +23,9 @@ const parsers = lazyParsers({
     return times(this.get('indent'), str(' '))
   },
   indentDeclaration: function() {
-    return ser(str('indent='), number, str(':'), str('\n')).result(function(result) {
-      this.set('indent', Number(result[1]))
-      return result
+    return ser(str('indent='), number, str(':'), str('\n')).value(function(value) {
+      this.set('indent', Number(value[1]))
+      return value
     })
   },
   number: function() {
@@ -80,11 +80,21 @@ ser(hello, hello2).parse('hellohello') // Succeeds
 
 The code is internally split into separate logical modules, and this documentation will use that separation as a way to compartmentalize the parts of this library. We'll start with the most useful part of the library.
 
-### [Basic Parsers](docs/parsers.md)
+### [Parsers](docs/parsers.md)
 
-Parsers: `eof`, `ok`, `fail`, `str`, `regex`, `ser`, `alt`, `many`, `atLeast`, `atMost`, `times`, `timesBetween`, `not`, `peek`, `name`, `desc`, `node`
+Basic Parsers: `eof`, `ok`, `fail`, `str`, `regex`, `ser`, `alt`, `many`, `atLeast`, `atMost`, `times`, `timesBetween`, `not`, `peek`, `name`, `desc`, `node`
 
-The basic parsers are the bread and butter of this library. You'll probably use these parsers more than any other.
+More Parsers: `listOf`, `seriesSepBy`, `memoize`
+
+The basic parsers are the bread and butter of this library. You'll probably use these parsers more than any other. The "more parsers" are more complex or higher level parsers. 
+
+### [Core and custom parsers](docs/core.md)
+
+Classes: `Parser`
+
+Functions: `isParser`, `getPossibleParser`
+
+If the basic parsers can't do what you need to do for some reason, you can write your own low-level parser using the `Parser` class.
 
 ### [`lazy` and importing parsers](docs/lazy.md)
 
@@ -101,20 +111,6 @@ Functions: `displayResult`, `displayDebugInfo`
 Classes: `InputInfoCache`
 
 `displayResult` and `displayDebugInfo` display the result of parsing in a human readable way. `InputInfoCache` is a class for transforming indexes into line and column numbers.
-
-### [Higher-level parser combinators](docs/moreParsers.md)
-
-Parsers: `listOf`
-
-These are higher-level parsers that may not be needed as often as the basic parsers, but still useful enough to include in this library. 
-
-### [Core and custom parsers](docs/core.md)
-
-Classes: `Parser`
-
-Functions: `isParser`, `getPossibleParser`
-
-If the basic parsers can't do what you need to do for some reason, you can write your own low-level parser using the `Parser` class.
 
 ## [Examples](examples)
 

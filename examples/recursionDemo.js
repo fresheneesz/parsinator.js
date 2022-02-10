@@ -10,14 +10,14 @@ const parsers = lazyParsers({
     return alt(number, array)
   },
   number: function() {
-    return regex(/[0-9]+/).result(Number)
+    return regex(/[0-9]+/).value(Number)
   },
   array: function() {
     return ser(
       str('('),
       {items: listOf(str(' '), expression)},
       str(')')
-    ).result(value => value.items)
+    ).value(value => value.items)
   },
 })
 eval(importParsers(parsers, 'parsers'))

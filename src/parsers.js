@@ -245,7 +245,7 @@ exports.node = function(name, parser) {
   parser = getPossibleParser(parser)
   return Parser(thisParserName, function() {
     const start = this.index
-    const transformedParser = parser.result(function(value) {
+    const transformedParser = parser.value(function(value) {
       return {name, value, start, end:this.index}
     })
     return this.parse(transformedParser, this)

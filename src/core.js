@@ -254,12 +254,12 @@ const Parser = proto(function() {
     return Parser(this.name, this.action, this.chainContinuations.concat(continuation))
   }
 
-  this.result = function(resultMapper) {
+  this.value = function(valueMapper) {
     const parser = this
     return Parser('map', function() {
       const result = this.parse(parser, this)
       if(result.ok) {
-        return result.context.ok(result.context.index, resultMapper.call(result.context, result.value))
+        return result.context.ok(result.context.index, valueMapper.call(result.context, result.value))
       } else {
         return result
       }
@@ -267,7 +267,7 @@ const Parser = proto(function() {
   }
 
   this.map = function(mapper) {
-    return this.result(function(values) {
+    return this.value(function(values) {
       const context = this
       return values.map(function() {
         return mapper.apply(context, arguments)

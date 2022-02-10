@@ -13,11 +13,11 @@
 
 * `continuation(value)` - Should return a `Parser`. The passed `value` is the value of the previously run parser and gets the current `Context` as `this`.
 
-**`parser.result(resultMapper)`** - Transforms the result into a new result.
+**`parser.value(valueMapper)`** - Transforms the result into a new result.
 
-* `mapper(value)` - A function that receives the value parsed by the calling parser and returns a new value (`ParserResult.value`) to replace the passed `value`. If the previous parser does not succeed, `result` doesn't modify the `ParseResult`. The `mapper` also gets the current `Context` as `this`.
+* `valueMapper(value)` - A function that receives the value parsed by the calling parser and returns a new value (`ParserResult.value`) to replace the passed `value`. If the previous parser does not succeed, `value` doesn't modify the `ParseResult`. The `valueMapper` also gets the current `Context` as `this`.
 
-**`parser.map(mapper)`** - Maps list results. Analogous to `Array.map`. Just a convenience method over `parser.result()`.
+**`parser.map(mapper)`** - Maps list results. Analogous to `Array.map`. Just a convenience method over `parser.value()`.
 
 **`parser.debug(shouldDebug=true)`** - Sets whether or not this `Parser` is in debug mode. The parser creates a debug record when in debug mode. See below for how debug mode affects the `ParseResult` and see `parser.parse` for how it affects parsing. 
 

@@ -12,9 +12,9 @@ const parsers = lazyParsers({
     return times(this.get('indent'), str(' '))
   },
   indentDeclaration: function() {
-    return ser(str('indent='), number, str(':'), str('\n')).result(function(result) {
-      this.set('indent', Number(result[1]))
-      return result
+    return ser(str('indent='), number, str(':'), str('\n')).value(function(value) {
+      this.set('indent', Number(value[1]))
+      return value
     })
   },
   number: function() {

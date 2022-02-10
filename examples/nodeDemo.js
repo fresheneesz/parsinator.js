@@ -7,11 +7,11 @@ const {
 
 const parsers = lazyParsers({
   number: function() {
-    return node('number', regex(/[0-9]+/).result(Number)).result(result => {
+    return node('number', regex(/[0-9]+/).value(Number)).value(value => {
       const infoCache = InputInfoCache(this.input)
-      result.startInfo = infoCache.get(result.start)
-      result.endInfo = infoCache.get(result.end)
-      return result
+      value.startInfo = infoCache.get(value.start)
+      value.endInfo = infoCache.get(value.end)
+      return value
     })
   }
 })

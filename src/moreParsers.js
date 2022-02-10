@@ -12,18 +12,18 @@ exports.listOf = function(separatorParser, primaryParser, constraints) {
         timesBetween(constraints.atLeast, constraints.atMost,
           ser(separatorParser,{primaryParser})
         ).map(value => value.primaryParser)
-      ).result(values => [values[0]].concat(values[1]))
-    ).result(values => values[0] || [])
+      ).value(values => [values[0]].concat(values[1]))
+    ).value(values => values[0] || [])
   )
 }
 
 exports.seriesSepBy = function(separatorParser, ...parsers) {
   let lastParser = parsers[0]
-  if(parsers.length === 1) return parsers[0].result(value => [value])
+  if(parsers.length === 1) return parsers[0].value(value => [value])
   for(let n=1; n<parsers.length; n++) {
     const parser = parsers[n]
     lastParser = lastParser.chain(function() {
-      return ser(separatorParser, parser).result(values => values[1])
+      return ser(separatorParser, parser).value(values => values[1])
     })
   }
   return name(`seriesSepBy(${separatorParser}, ...)`, lastParser)

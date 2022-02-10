@@ -10,11 +10,11 @@
 
 Success:
 
-![SuccessDisplay](D:\billysFile\code\modules\parsinator.js\docs\SuccessDisplay.png)
+![SuccessDisplay](SuccessDisplay.png)
 
 Failure:
 
-![FailDisplay](D:\billysFile\code\modules\parsinator.js\docs\FailDisplay.png)
+![FailDisplay](FailDisplay.png)
 
 **`displayDebugInfo(result, options)`** - Displays the debug record inside `result`.
 
@@ -25,6 +25,8 @@ Failure:
   * `colors` - (Default: `true`) If `true`, text will be colorized. Otherwise output won't be colored differently from the default.
   * `inputInfoCache` - An `InputInfoCache` instance for getting line and column numbers from the input.
   * `stateDisplay(startState, endState)`
+  
+  ![FailDebug](../fail-debug.png)
 
 **`InputInfoCache(input)`** - A class for mapping index numbers to line and column numbers (and vice versa) from an input. It also caches this information for performant repeated retrieval.
 

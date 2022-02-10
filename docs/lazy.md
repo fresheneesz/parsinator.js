@@ -26,14 +26,14 @@ const parsers = lazyParsers({
     return alt(number, array)
   },
   number: function() {
-    return regex(/[0-9]+/).result(Number)
+    return regex(/[0-9]+/).value(Number)
   },
   array: function() {
     return ser(
       str('('),
       {items: listOf(str(' '), expression)},
       str(')')
-    ).result(value => value.items)
+    ).value(value => value.items)
   },
 })
 eval(importParsers(parsers, 'parsers'))
@@ -46,14 +46,14 @@ const expression = lazy('expression', function() {
   return alt(number, array)
 })
 const number = lazy('number', function() {
-  return regex(/[0-9]+/).result(Number)
+  return regex(/[0-9]+/).value(Number)
 })
 const array = lazy('array', function() {
   return ser(
     str('('),
     {items: listOf(str(' '), expression)},
     str(')')
-  ).result(value => value.items)
+  ).value(value => value.items)
 })
 ```
 
