@@ -1,5 +1,5 @@
 const {
-  eof, ok, fail, str, match, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, name, desc, node
+  eof, ok, fail, str, regex, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, name, desc, node
 } = require("../src/parsers")
 var {lazy} = require("../src/lazy")
 
@@ -59,11 +59,11 @@ module.exports = [
     ok: false, expected: new Set(["a"])
   }},
 
-  // str
-  {name: 'match', parser: match(/a+/), input: "aaaaaaa", result: {
+  // regex
+  {name: 'regex', parser: regex(/a+/), input: "aaaaaaa", result: {
     ok: true, value: "aaaaaaa"
   }},
-  {name: 'match fail', parser: match(/a+/), input: "b", result: {
+  {name: 'regex fail', parser: regex(/a+/), input: "b", result: {
     ok: false, expected: new Set(["/a+/"])
   }},
 

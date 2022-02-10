@@ -1,12 +1,12 @@
 const {
-  str, alt, match,
+  ser, alt, regex,
   lazyParsers, importParsers,
   displayResult
 } = require("../parsinator")
 
 const parsers = lazyParsers({
   oneChar: function() {
-    return match(/./ms)
+    return regex(/./ms)
   },
   threeChars: function() {
     return ser(oneChar(), oneChar(), oneChar())

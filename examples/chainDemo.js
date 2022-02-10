@@ -1,12 +1,12 @@
 const {
-  fail, str, match, desc,
+  fail, str, regex, desc,
   lazyParsers, importParsers,
   displayResult
 } = require("../parsinator")
 
 const parsers = lazyParsers({
   lowerAlphaChar: function() {
-    return desc('lower case letter', match(/[a-z]/))
+    return desc('lower case letter', regex(/[a-z]/))
   },
   lowerUpperAlphaPair: function() {
     return lowerAlphaChar().chain(function(value) {

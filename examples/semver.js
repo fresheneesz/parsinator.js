@@ -1,12 +1,12 @@
 const {
-  ok, ser, str, match,
+  ok, ser, str, regex,
   lazyParsers, importParsers,
   displayResult
 } = require("../parsinator")
 
 const parsers = lazyParsers({
   integer: function() {
-    return match(/[0-9]+/).chain(value => ok(Number(value)))
+    return regex(/[0-9]+/).chain(value => ok(Number(value)))
   },
   version: function() {
     return ser({major: integer()}, str('.'), {minor: integer()}, str('.'), {patch: integer()})

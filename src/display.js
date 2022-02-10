@@ -1,14 +1,18 @@
+// The exports of this file are documented in ../docs/display.md
+
 const util = require('util')
+const proto = require("proto")
 const colors = require("colors")
-const InputInfoCache = require("./InputInfoCache")
 
 
 exports.displayResult = function(result, options) {
   options = Object.assign({
-    indicatorColor: colors.red,
     colors: true, // To pass to displayDebugInfo.
-    inputInfoCache: InputInfoCache(result.context.input), displayDebug: true
+    inputInfoCache: InputInfoCache(result.context.input), displayDebug: true,
+    /*stateDisplay: undefined*/ // To pass to displayDebugInfo.
   }, options)
+  options.indicatorColor = options.colors? colors.red : text => text
+
   if(result.ok) {
     var display = displaySuccess(result, options)
   } else {
@@ -16,7 +20,9 @@ exports.displayResult = function(result, options) {
   }
 
   if(options.displayDebug && result.context.debugRecord !== undefined) {
-    display += '\n'+displayDebugInfo(result, {colors:options.colors})
+    const optionsToPass = {colors:options.colors}
+    if(options.stateDisplay) optionsToPass.stateDisplay = options.stateDisplay
+    display += '\n'+displayDebugInfo(result, optionsToPass)
   }
   return display
 }
@@ -111,14 +117,16 @@ function displayError(result, options) {
 
 const displayDebugInfo = exports.displayDebugInfo = function(result, options) {
   const debugRecord = result.context.debugRecord
-  options = Object.assign({
-    colors: true, maxMatchChars: 30, maxSubrecordDepth: 75,
-    inputInfoCache: InputInfoCache(debugRecord.result.context.input)
-  }, options)
   return displayDebugRecord(0, debugRecord, options)
 }
 
 function displayDebugRecord(indent, record, options) {
+  options = Object.assign({
+    colors: true, maxMatchChars: 30, maxSubrecordDepth: 75,
+    inputInfoCache: InputInfoCache(record.result.context.input),
+    stateDisplay: stateDisplay
+  }, options)
+
   let green = colors.green
   let red = colors.red
   let gray = colors.gray
@@ -154,17 +162,18 @@ function displayDebugRecord(indent, record, options) {
       var intentString = strmult(indent, ' ')
     }
 
+    let stateString = ''
     if(record.result.ok) {
       var color = green
-      var stateToDisplay = record.result.context._state
+      var endState = record.result.context._state
+      if(endState.size > 0) {
+        stateString = cyan(' '+options.stateDisplay(record.startState, endState))
+      }
     } else {
       var color = red
-      var stateToDisplay = record.startState
-    }
-
-    let stateString = ''
-    if(stateToDisplay.size > 0) {
-      stateString = cyan(' '+mapDisplay(stateToDisplay))
+      if(record.startState.size > 0) {
+        stateString = red(' '+options.stateDisplay(record.startState))
+      }
     }
 
     outputText.push(gray(intentString)+color(record.name+": "+matchedString+stateString))
@@ -189,14 +198,59 @@ function displayDebugRecord(indent, record, options) {
     }
   }
   return outputText.join('\n')
-}
 
-function mapDisplay(map) {
-  var results = []
-  for(let [key, value] of map) {
-    results.push(key+':'+value)
+  // Returns a string that displays the give maps.
+  // startState - A Map.
+  // endState - A Map or undefined if only the startState should be displayed.
+  function stateDisplay(startState, endState) {
+    if(endState) {
+      return mapDiffDisplay(startState, endState)
+    } else {
+      return mapDisplay(startState)
+    }
   }
-  return '{'+results.join(', ')+'}'
+
+  // Returns a string that displays the passed Map.
+  function mapDisplay(map) {
+    var results = []
+    for(let [key, value] of map) {
+      results.push(key+':'+value)
+    }
+    return '{'+results.join(', ')+'}'
+  }
+
+  // Returns a string that displays the difference between the passed Maps.
+  function mapDiffDisplay(startState, endState) {
+    const diff = mapDiff(startState, endState)
+
+    var results = []
+    for(let [key, value] of diff) {
+      if(value.start === undefined) {
+        results.push(key+':->'+value.end)
+      } else {
+        results.push(key+':'+value.start+'->'+value.end)
+      }
+    }
+
+    if(results.length === 0) {
+      return '{'+gray('*no change*')+'}'
+    } else {
+      return '{'+results.join(', ')+'}'
+    }
+  }
+
+  // Returns a map that contains only the key-value pairs that are different between them. Each value will be
+  // an object like {start: _, end: _} showing the change of value.
+  function mapDiff(start, end) {
+    const keys = Array.from(new Set(Array.from(start.keys()).concat(Array.from(end.keys()))))
+    const result = new Map
+    new Map(keys.forEach(key => {
+      if(start.get(key) !== end.get(key)) {
+        result.set(key, {start: start.get(key), end: end.get(key)})
+      }
+    }))
+    return result
+  }
 }
 
 function strmult(multiplier, str) {
@@ -206,3 +260,83 @@ function strmult(multiplier, str) {
   }
   return results.join('')
 }
+
+
+const InputInfoCache = exports.InputInfoCache = proto(function LineCache() {
+  this.init = function(input) {
+    this.input = input
+    // A list containing the last index of each 0-based.
+    this.cache = []
+  }
+
+  this.get = function(index) {
+    if(index < 0 || this.input.length < index) {
+      throw new Error("Asking for info about an index not contained in the target string: "+index+'.')
+    }
+    const oneIndexBeyond = this.input.length === index
+    const columnAddition = oneIndexBeyond? 1 : 0
+    // This is a special case because the input doesn't actually contain this index.
+    if(oneIndexBeyond) {
+      index--
+    }
+
+    let lastLineEndIndex = -1
+    for(let zeroBasedLine=0; zeroBasedLine<this.cache.length; zeroBasedLine++) {
+      const lineInfo = getLineInfo(index, this.cache, zeroBasedLine, lastLineEndIndex, columnAddition)
+      if(lineInfo) {
+        return lineInfo
+      }
+      lastLineEndIndex = this.cache[zeroBasedLine]
+    }
+
+    const lineInfo = this.searchUntil((zeroBasedLineNumber, lastLineEndIndex) => {
+      return getLineInfo(index, this.cache, zeroBasedLineNumber, lastLineEndIndex, columnAddition)
+    })
+    if(lineInfo) {
+      return lineInfo
+    } else {
+      throw new Error("Couldn't find line info.")
+    }
+
+    // Gets line information for the passed index.
+    function getLineInfo(index, cache, zeroBasedLineNumber, lastLineEndIndex, columnAddition) {
+      if(index < cache[zeroBasedLineNumber]) {
+        return {line: zeroBasedLineNumber+1, column: index-lastLineEndIndex+columnAddition}
+      } else if(index === cache[zeroBasedLineNumber]) {
+        return {line: zeroBasedLineNumber+1, column: index-lastLineEndIndex+columnAddition}
+      }
+    }
+  }
+
+  // Searches the input until check returns something truthy.
+  // startIndex - The line to start searching from.
+  // check(lineNumber, lastLineEndIndex)
+  this.searchUntil = function(check) {
+    let lastLineEndIndex = this.cache[this.cache.length-1] || -1
+    const startIndex = lastLineEndIndex+1
+    for(let n=startIndex; n<this.input.length; n++) {
+      if(this.input[n] === '\n' || n == this.input.length-1) {
+        this.cache.push(n)
+        const checkResult = check(this.cache.length-1, lastLineEndIndex)
+        if(checkResult) {
+          return checkResult
+        }
+        lastLineEndIndex = n
+      }
+    }
+  }
+
+  this.getLineIndex = function(line) {
+    if(line === 1) return 0
+    line = line-1 // 0 based is easier internally.
+    if(this.cache.length < line) {
+      this.searchUntil((lineNumber) => {
+        return lineNumber === line
+      })
+    }
+    if(line <= this.cache.length) {
+      // The start of the line is the end of the previous line plus 1.
+      return this.cache[line-1]+1
+    }
+  }
+})

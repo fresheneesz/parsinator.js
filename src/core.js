@@ -1,3 +1,7 @@
+// This file contains the lowest level of objects in parsinator.js. The code here handles keeping track of the current
+// location being parsed, parser state, the resulting values of parsing, chain continuations, and
+// debug information gathering. The exports in here are documented in docs/core.md.
+
 const proto = require("proto")
 
 const internal = {} // Indicates internal to prevent misuse.
@@ -12,6 +16,7 @@ const ParseResult = proto(function() {
         this.error, // An exception, if one happened while running in debug mode. This should only possibly exist
                     // if this.ok is false.
       ] = arguments
+    // this.debugRecord // Can be set in debug mode.
   }
 
   this.copy = function() {
@@ -19,9 +24,6 @@ const ParseResult = proto(function() {
   }
 })
 
-// A Context represents a location in an input string, passed along state that parsers can read and write to,
-// and in the case of debugging holds a record of the entire parsing session. Giving a parser a context will cause it
-// to parse from the Context's index.
 const Context = proto(function() {
   this.init = function() {
     ;[this.input, // The string source being parsed.
@@ -88,6 +90,7 @@ const Context = proto(function() {
   // parser - The parser to continue parsing with.
   // curContext - The context to continue parsing from.
   this.parse = function(parser, curContext) {
+    if(!curContext) throw new Error("Context.parse not passed a curContext.")
     parser = getPossibleParser(parser)
     if(this === curContext) {
       curContext = this.copy()
@@ -134,20 +137,26 @@ const Context = proto(function() {
   }
 })
 
+// The primary class for parsinator.js.
 const Parser = proto(function() {
   this.init = function() {
     ;[this.name,
       this.action, // A function that returns a ParseResult.
-      this.chainContinuations, // A list of continuations registered by `chain`.
+      this.chainContinuations, // A list of continuations registered by `chain`. This is intended to only be used internally.
     ] = arguments
+    if(!this.action) throw new Error("No action passed to Parser constructor")
     if(this.chainContinuations === undefined) this.chainContinuations = []
+    this.shouldDebug = false
   }
 
-  // Returns a ParseResult.
   this.parse = function(
-    // One of:
-    // * input // A string input.
-    // * context // A Context to continue from.
+    // arguments[0] - One of:
+    //                * input // If the argument is a string, it will parse that string from the beginning.
+    //                * context // If the argument is a Context, it will parse context.input from context.index. This
+    //                             is intended only for internal use.
+    // arguments[1] - internal: will be set for internal calls of parse. This is so debug exception propagation can
+    //                work properly without allowing outside code to do unexpected things that could cause an exception
+    //                to be thrown in the middle of parsing without being recorded properly in the debug log.
   ) {
     if(typeof(arguments[0]) !== 'string' && !(arguments[0] instanceof Context)) {
       throw new Error("Argument passed to parse is neither a string nor a Context object.")
@@ -196,8 +205,8 @@ const Parser = proto(function() {
       try {
         return action()
       } catch(e) {
-        // The idea here is that any exception that happens should be caught, recorded in the debug
-        // record, and re-thrown to propagate it up and returned as a top-level error result.
+        // The idea here is that any exception should be caught, recorded in the debug
+        // record, and re-thrown to propagate it up and then returned as a top-level error result.
         // An uncaught exception is not a normal parse failure and it basically should be
         // treated like a critical failure.
         if(e instanceof InternalError) {
@@ -219,6 +228,8 @@ const Parser = proto(function() {
 
   // Runs a set of continuations in the form passed to `chain`.
   // Returns the result of the chain.
+  // As far as the debug record is concerned, this records all chained continuations as subRecord siblings
+  // (under the 'chain' record set up in the `parse` code that calls this.
   function runContinuations(context, chainContinuations) {
     const resultValues = []
     let prevResult = {ok:true, context: context} // Set up fake previous result.
@@ -239,17 +250,10 @@ const Parser = proto(function() {
     return ParseResult(prevResult.ok, prevResult.context, resultValues, prevResult.expected, prevResult.error)
   }
 
-  // Access the value returned by the parser this is called on and returns a new parser to continue from.
-  // If the parser returns an ok ParseResult, calls `continuation` to get the next parser to continue parsing from.
-  // continuation(value) - Should return a Parser. Also gets the current Context as `this`.
   this.chain = function(continuation) {
     return Parser(this.name, this.action, this.chainContinuations.concat(continuation))
   }
 
-  // Transforms the result into a new result.
-  // mapper(value) - A function that receive the value parsed by the calling parser and returns a new value
-  //                 to replace that value. If the previous parser does not succeed, map doesn't modify the ParseResult.
-  //                 Also gets the current Context as `this`.
   this.result = function(resultMapper) {
     const parser = this
     return Parser('map', function() {
@@ -262,7 +266,6 @@ const Parser = proto(function() {
     })
   }
 
-  // Maps list results. Just a convenience method.
   this.map = function(mapper) {
     return this.result(function(values) {
       const context = this
@@ -272,7 +275,6 @@ const Parser = proto(function() {
     })
   }
 
-  // Sets whether or not this Parser is in debug mode.
   this.debug = function(shouldDebug) {
     if(shouldDebug === undefined) shouldDebug = true
     this.shouldDebug = shouldDebug
@@ -284,9 +286,6 @@ function isParser(parser) {
   return parser instanceof Parser || parser instanceof Function && parser() instanceof Parser
 }
 
-// Returns a Parser if one can be found as either:
-// * The passed argument, or
-// * the result of calling the passed argument as a function with no arguments.
 function getPossibleParser(parser) {
   if(parser instanceof Function) {
     let possibleParser = parser()

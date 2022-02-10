@@ -1,6 +1,7 @@
+// See ../docs/parsers.md for documentation.
+
 const {Parser, isParser, getPossibleParser} = require("./core")
 
-// Matches the end of input, returns undefined.
 exports.eof = function() {
   return Parser('eof', function() {
     if(this.index >= this.input.length) {
@@ -11,21 +12,18 @@ exports.eof = function() {
   })
 }
 
-// Returns a parser that consumes no input and returns a result.
-exports.ok = function(result) {
+exports.ok = function(value) {
   return Parser('ok', function() {
-    return this.ok(this.index, result)
+    return this.ok(this.index, value)
   })
 }
 
-// Returns a parser that consumes no input and fails with an expectation or whatever.
 exports.fail = function(expected) {
   return Parser('fail', function() {
     return this.fail(this.index, expected)
   })
 }
 
-// Matches a string.
 exports.str = function(string) {
   return Parser('str('+JSON.stringify(string)+')', function() {
     const start = this.index
@@ -38,9 +36,7 @@ exports.str = function(string) {
   })
 }
 
-
-// Matches a regular expression at the current index.
-exports.match = function(regexp) {
+exports.regex = function(regexp) {
   for (const flag of regexp.flags) {
     // Flags ignoreCase, dotAll, multiline, and unicode are suppported.
     if (!['i','s','m','u'].includes(flag)) {
@@ -48,7 +44,7 @@ exports.match = function(regexp) {
     }
   }
   const sticky = new RegExp(regexp.source, regexp.flags + "y") // Force regex to only match at sticky.lastIndex
-  return new Parser('match('+regexp+')', function() {
+  return new Parser('regex('+regexp+')', function() {
     sticky.lastIndex = this.index
     const match = this.input.match(sticky)
     if (match) {
@@ -60,14 +56,6 @@ exports.match = function(regexp) {
   })
 }
 
-// Runs a series of parsers in sequence.
-// Each argument can either be:
-// * A Parser object, or
-// * An object with a single key-value pair, where the key is a label and the value is a Parser object to run.
-//   If any argument is a key-value pair object like that, the result will be a key-value pair object with
-//   keys matching each argument's key and each value will be the value returned by the parser. Unlabeled parsers
-//   won't have their result values included in the result value of the ser parse. For example,
-//   `ser({a: str('a')}, str('b'))` would have the result `{a: 'a'}` if it succeeded.
 exports.ser = function(...parsers) {
   if(parsers.length === 0) throw new Error("Call to `ser` passes no parsers.")
 
@@ -156,28 +144,23 @@ exports.alt = function(...parsers) {
   })
 }
 
-// Allows a parser to match 0 or more times in a series.
 exports.many = function(parser) {
   return _timesInternal('many', parser)
 }
 
-// Expects the parser to match at least `numberOfTimes` in a series.
 exports.atLeast = function(numberOfTimes, parser) {
   return _timesInternal('atLeast', parser, {atLeast: numberOfTimes})
 }
 
-// Allows a parser to match at most `numberOfTimes` in a series.
 exports.atMost = function(numberOfTimes, parser) {
   return _timesInternal('atMost', parser, {atMost: numberOfTimes})
 }
 
-// Expects the parser to match `numberOfTimes` in a series.
 exports.times = function(numberOfTimes, parser) {
   if(numberOfTimes === undefined) throw new Error('times not passed a numberOfTimes: '+numberOfTimes)
   return _timesInternal('times('+numberOfTimes+')', parser, {atLeast: numberOfTimes, atMost: numberOfTimes})
 }
 
-// Allows a parser to match between `atLeast` and `atMost` times in a series.
 exports.timesBetween = function(atLeast, atMost, parser) {
   return _timesInternal('timesBetween', parser, {atLeast, atMost})
 }
@@ -219,8 +202,6 @@ function _timesInternal(
   })
 }
 
-// Returns a parser that returns true if the passed in parser doesn't match.
-// Doesn't return a value and doesn't advance the index.
 exports.not = function(parser) {
   maybeInvalidParserException('not', parser)
   return Parser('not', function() {
@@ -233,7 +214,6 @@ exports.not = function(parser) {
   })
 }
 
-// Returns a parser that consumes no input and fails with an expectation or whatever.
 exports.peek = function(parser) {
   maybeInvalidParserException('peek', parser)
   return Parser('peek', function() {
@@ -246,15 +226,6 @@ exports.peek = function(parser) {
   })
 }
 
-// Pass through parser that simply renames the parser. Mostly useful for debugging.
-exports.name = function(name, parser) {
-  maybeInvalidParserException('name', parser)
-  parser.name = name
-  return parser
-}
-
-// This sets a name to describe the parser for use as an `expected` value. Will override the `expected` values of
-// the passed parser in the case it fails.
 exports.desc = function(name, parser) {
   const parserName = 'desc('+name+')'
   maybeInvalidParserException(parserName, parser)
@@ -275,10 +246,16 @@ exports.node = function(name, parser) {
   return Parser(thisParserName, function() {
     const start = this.index
     const transformedParser = parser.result(function(value) {
-      return {name:name, value, start, end:this.index}
+      return {name, value, start, end:this.index}
     })
     return this.parse(transformedParser, this)
   })
+}
+
+exports.name = function(name, parser) {
+  maybeInvalidParserException('name', parser)
+  parser.name = name
+  return parser
 }
 
 // name - The name of the parser this is being called from.
