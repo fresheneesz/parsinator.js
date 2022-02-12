@@ -1,4 +1,5 @@
-const {str, ser, alt} = require("../src/parsers")
+const {str} = require("../src/core")
+const {ser, alt} = require("../src/parsers")
 const {listOf, seriesSepBy, memoize} = require("../src/moreParsers")
 
 const memoizedA = memoize(str('a'))

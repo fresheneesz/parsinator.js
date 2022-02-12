@@ -45,16 +45,19 @@
 
 ## More Parsers
 
-**`listOf(separator, primaryParser, constraints)`** - A list of tokens separated by a separator. Returns the values for just the `primaryParser` matches (ignores the values of the separator matches).
+**`listOf([options,] separator, primaryParser)`** - A list of tokens separated by a separator. Returns the values for just the `primaryParser` matches (ignores the values of the separator matches).
 
-* `separator` - A `Parser` used to match the separator in between `primaryParser` matches.
-* `primaryParser` - The primary parser to build a list of. 
-* `constraints` - An object with the following properties:
+* `options` - An optional object with the following properties:
   * `atLeast` - (Default: 0) Fails if the parser doesn't match this many times.
   * `atMost` - (Default: Infinity) Limits the number of matches to this number.
+  * `ignoreSep` - (Default: true) If true, the result of the separator is ignored.
+* `separator` - A `Parser` used to match the separator in between `primaryParser` matches.
+* `primaryParser` - The primary parser to build a list of.
 
-**`seriesSepBy(separator, ...parsers)`** - A list of sequential tokens separated by a separator. Returns the values for just the `parsers` and ignores the separator matches.
+**`seriesSepBy([options,] separator, ...parsers)`** - A list of sequential tokens separated by a separator. Returns the values for just the `parsers` and ignores the separator matches.
 
+* `options` - An optional object with the following properties:
+  * `ignoreSep` - (Default: true) If true, the result of the separator is ignored.
 * `separator` - A `Parser` used to match the separator in between `primaryParser` matches.
 * `...parsers` - All the arguments after the first are `Parser`s that are matched in series, with the `separator` between them.
 

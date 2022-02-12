@@ -1,5 +1,6 @@
+const {str, regex} = require("../src/core")
 const {
-  eof, ok, fail, str, regex, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, name, desc, node
+  eof, ok, fail, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, name, desc, node
 } = require("../src/parsers")
 var {lazy} = require("../src/lazy")
 

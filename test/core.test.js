@@ -307,10 +307,12 @@ module.exports = [
     return [
       getPossibleParser(Parser('x', function(){})).name,
       getPossibleParser(()=>Parser('y', function(){})).name,
+      getPossibleParser("hi").name,
+      getPossibleParser(/hello/).name,
       getPossibleParser(3)
     ]
   }, result: [
-    'x', 'y', 3
+    'x', 'y', 'str("hi")', 'regex(/hello/)', 3
   ]},
 
   //*/

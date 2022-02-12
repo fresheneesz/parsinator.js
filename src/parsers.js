@@ -24,38 +24,6 @@ exports.fail = function(expected) {
   })
 }
 
-exports.str = function(string) {
-  return Parser('str('+JSON.stringify(string)+')', function() {
-    const start = this.index
-    const end = this.index + string.length
-    if(this.input.slice(start, end) === string) {
-      return this.ok(end, string)
-    } else {
-      return this.fail(start, [string])
-    }
-  })
-}
-
-exports.regex = function(regexp) {
-  for (const flag of regexp.flags) {
-    // Flags ignoreCase, dotAll, multiline, and unicode are suppported.
-    if (!['i','s','m','u'].includes(flag)) {
-      throw new Error("only the regexp flags 'imsu' are supported")
-    }
-  }
-  const sticky = new RegExp(regexp.source, regexp.flags + "y") // Force regex to only match at sticky.lastIndex
-  return new Parser('regex('+regexp+')', function() {
-    sticky.lastIndex = this.index
-    const match = this.input.match(sticky)
-    if (match) {
-      const end = this.index + match[0].length
-      const string = this.input.slice(this.index, end)
-      return this.ok(end, string)
-    }
-    return this.fail(this.index, [regexp.toString()])
-  })
-}
-
 exports.ser = function(...parsers) {
   if(parsers.length === 0) throw new Error("Call to `ser` passes no parsers.")
 

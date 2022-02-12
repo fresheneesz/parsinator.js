@@ -1,5 +1,6 @@
+const {str} = require("../src/core")
 const {
-  eof, ok, fail, str, regex, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek
+  eof, ok, fail, alt, ser, not
 } = require("../src/parsers")
 var {lazy} = require("../src/lazy")
 var {InputInfoCache, displayResult, displayDebugInfo} = require("../src/display")

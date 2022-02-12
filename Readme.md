@@ -74,7 +74,7 @@ Parsinator.js parsers operate on a string and step through the string attempting
 
 Every parser returns a `ParseResult` that indicates whether it succeeded (`ok=true`) or failed (`ok=false`). A successful `ParseResult` contains the `value` returned by the parser. A failed `ParseResult` contains the input it `expected` to receive. There are more details in [docs/core.md](docs/core.md).
 
-For convenience, any place that expects a `Parser` can also accept an argumentless function that returns a `Parser`.
+For convenience, any place that expects a `Parser` can also accept a string, a RegExp, or an argumentless function that returns a `Parser`.
 
 ```
 const hello = str('hello')
@@ -132,7 +132,6 @@ All of the exports of these files are combined and exposed through the main scri
 * make a note about ignoring parser results in custom parsers notes - related to ignoreSep
 * more custom parsers notes
  * Note about using `Context.ok` or `Context.fail` on the most recent parse context. But make the opposite note if you decide state shouldn't be propagated downwards.
-* suppport bare strings and regex as parsers
 * Put on npm
 * Write up details on how to interpret debug trace output
 * write up tutorial (note that the tutorial doesn't cover anything that isn't in the reference docs, but vice versa is not true)

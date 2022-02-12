@@ -96,10 +96,12 @@ In the above, notice that `integer()` and `integer` passed as parsers to `series
 
 **`isParser(possibleParser)`** - Returns whether parsinator.js can recognize the input as a `Parser`. See `getPossibleParser` for more info.
 
-**`getPossibleParser(possibleParser)`** - Returns a `Parser` if one can be found as either:
+**`getPossibleParser(possibleParser)`** - Returns a `Parser` under the following cases:
 
-* The passed argument, or
-* the result of calling the passed argument as a function with no arguments.
+* if `possibleParser` is a `Parser`,
+* if `possibleParser` is a string, it will return `str(possibleParser)`,
+* if `possibleParser` is a RegExp, it will return `regex(possibleParser)`, or
+* if the result of calling the passed argument as a function with no arguments is a `Parser`, it will return that.
 
 ## Writing Custom Parsers
 

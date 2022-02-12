@@ -1,4 +1,5 @@
-const {alt, eof, ser, str} = require("../src/parsers")
+const {str} = require("../src/core")
+const {alt, eof, ser} = require("../src/parsers")
 const {lazy, lazyParsers, importParsers} = require("../src/lazy")
 
 const wrappedParserA = lazy('wrappedParserA', function() {
