@@ -1,3 +1,8 @@
+// Naughty or is a concept where cerain parts of your parser won't run until the whole rest of your language fails.
+// Once the rest of the language fails, then "naughty" parsers that are more relaxed can parse additional things.
+// This can be useful for finding mistakes the writer of the content your parsing made and reporting them back to the
+// user of your parser in a better way, or reporting many errors and warnings rather than just a single one.
+
 const {
   eof, fail, ok, str, regex, alt, ser, many,
   listOf,
@@ -8,7 +13,6 @@ const {
 const declarativeLanguage = lazyParsers({
   language: function() {
     this.set('mode', 'normal')
-    this.set('errors', [])
     return alt(declarations, naughtyLanguage).value(function(value) {
       return [value, this.get('errors')]
     })
@@ -18,15 +22,14 @@ const declarativeLanguage = lazyParsers({
     return declarations
   },
   declarations: function() {
-    return ser(listOf(declarationSeparator, declaration), eof)
+    return ser(listOf(declarationSeparator, declaration, {ignoreSep: false}), eof)
   },
   declarationSeparator: function() {
     return ser(
       naughtyOr(str(';'), str('').chain(function(value) {
         const cache = InputInfoCache(this.input)
         const info = cache.get(this.index)
-        this.set('errors', this.get('errors').concat(["Missing semi colon at line "+info.line+", column "+info.column+"."]))
-        return ok(value)
+        return ok({error: ["Missing semi colon at line "+info.line+", column "+info.column+"."]})
       })),
       many(str('\n'))
     )

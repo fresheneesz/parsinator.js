@@ -14,17 +14,20 @@ exports.displayResult = function(result, options) {
   }, options)
   options.indicatorColor = options.colors? options.indicatorColor : text => text
 
-  if(result.ok) {
-    var display = displaySuccess(result, options)
-  } else {
-    var display = displayError(result, options)
-  }
-
+  let display = ''
   if(options.displayDebug && result.context.debugRecord !== undefined) {
     const optionsToPass = {colors:options.colors}
     if(options.stateDisplay) optionsToPass.stateDisplay = options.stateDisplay
-    display += '\n'+displayDebugInfo(result, optionsToPass)
+    display = displayDebugInfo(result, optionsToPass)+'\n'
   }
+
+
+  if(result.ok) {
+    display += displaySuccess(result, options)
+  } else {
+    display += displayError(result, options)
+  }
+
   return display
 }
 
@@ -59,14 +62,13 @@ function displayError(result, options) {
 
   // Returns the list of expected values.
   function buildExpectedText(result) {
+    const expected = Array.from(result.expected).map(value => JSON.stringify(value))
     if(result.expected.size === 1) {
-      return '"'+Array.from(result.expected)[0]+'"'
+      return expected[0]
     } else if(result.expected.size === 2) {
-      const expected = Array.from(result.expected)
-      return '"'+expected[0]+'" or "'+expected[1]+'"'
+      return expected[0]+' or '+expected[1]
     } else {
-      const expected = Array.from(result.expected)
-      return '"'+expected.slice(0, -1).join('", "') + '" or "'+expected[expected.length-1]+'"'
+      return expected.slice(0, -1).join(', ') + ' or '+expected[expected.length-1]
     }
   }
 

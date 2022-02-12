@@ -1,10 +1,13 @@
 # Parsinator.js
 
-Yet another parser combinator library with a couple unique features:
+Yet another [parser combinator](http://en.wikipedia.org/wiki/Parser_combinator) library with a couple unique features:
 
 * State, which helps for contextful languages of any reasonable amount of complexity (like ones that have LR conflicts or whitespace delimiting).
-
 * Powerful debug recording and displaying. This can be enormously helpful figuring out why your parser isn't working as you expect.
+
+## Parser Combinators
+
+A parser combinator 
 
 ## Example
 
@@ -46,6 +49,10 @@ The output of this also shows the debugging capability:
 ![fail-debug](fail-debug.png)
 
 See the full working example file at [examples/stateDemo.js](examples/stateDemo.js).
+
+## More [Examples](examples)
+
+There's a number of examples that show various aspects of using parsinator.js. 
 
 ## Install
 
@@ -112,10 +119,6 @@ Classes: `InputInfoCache`
 
 `displayResult` and `displayDebugInfo` display the result of parsing in a human readable way. `InputInfoCache` is a class for transforming indexes into line and column numbers.
 
-## [Examples](examples)
-
-There's a number of examples that show various aspects of using parsinator.js. 
-
 ## Structure
 
 [`core.js`](src/core.js) contains the base-level functionality everything else is built on. [`parsers.js`](src/parsers.js) contains the basic parsers built on top of that core. [`lazy.js`](src/lazy.js) contains important functionality for creating parsers that can recurse properly among other things, also built on top of `core.js`. [`moreParsers.js`](src/moreParsers.js) contains higher-level parsers built on top of the basic parsers inside `parsers.js`. [`display.js`](src/display.js) contains functionality for displaying human readable information about parse results.
@@ -125,9 +128,16 @@ All of the exports of these files are combined and exposed through the main scri
 
 
 ## Todo
-
+* Figure out if you want state to propagate downward
+* make a note about ignoring parser results in custom parsers notes - related to ignoreSep
+* more custom parsers notes
+ * Note about using `Context.ok` or `Context.fail` on the most recent parse context. But make the opposite note if you decide state shouldn't be propagated downwards.
+* suppport bare strings and regex as parsers
+* Put on npm
+* Write up details on how to interpret debug trace output
+* write up tutorial (note that the tutorial doesn't cover anything that isn't in the reference docs, but vice versa is not true)
 * Support streaming input.
+* See if parsing unicode presents unique challenges as is mentioned in https://github.com/GregRos/parjs
+* Investigate what [parjs](https://github.com/GregRos/parjs)'s traces look like
 * Mention somewhere to be careful about using new style lambda functions, because they don't retain their own `this` and thus won't be able to access the current context (but may instead access an upper context).
-* Inform people:
-  * https://github.com/jneen/parsimmon/issues/143
-  * https://github.com/jneen/parsimmon/issues/230
+* Inform people (SO?)

@@ -20,11 +20,14 @@ module.exports = [
   {name: 'listOf no match', parser: listOf(str(','), str('a')), input: "b,a,a,a", result: {
     ok: true, value: [] // This parser can't really fail.
   }},
-  {name: 'listOf too few', parser: listOf(str(','), str('a'), {atLeast:3}), input: "a,a", result: {
+  {name: 'listOf too few', parser: listOf({atLeast:3}, str(','), str('a')), input: "a,a", result: {
     ok: false, expected: new Set([','])
   }},
-  {name: 'listOf more than max', parser: listOf(str(','), str('a'), {atMost:2}), input: "a,a,a", result: {
+  {name: 'listOf more than max', parser: listOf({atMost:2}, str(','), str('a')), input: "a,a,a", result: {
     ok: true, value: ['a','a']
+  }},
+  {name: 'listOf ignoreSep', parser: listOf({ignoreSep: false}, str(','), str('a')), input: "a,a", result: {
+    ok: true, value: ['a', ',', 'a']
   }},
 
   // seriesSepBy
@@ -36,6 +39,9 @@ module.exports = [
   }},
   {name: 'seriesSepBy fail', parser: seriesSepBy(str(','), str('a'), str('b'), str('c')), input: "a,b,d", result: {
     ok: false, expected: new Set(['c']), context:{index:4}
+  }},
+  {name: 'seriesSepBy ignoreSep', parser: seriesSepBy({ignoreSep: false}, str(','), str('a'), str('b')), input: "a,b", result: {
+    ok: true, value: ['a', ',', 'b']
   }},
 
   // memoize - the same parser run at the same index in the same conditions will return a remembered result.

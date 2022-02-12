@@ -47,7 +47,7 @@ module.exports = [
     })
     const result = exceptionParser.debug().parse("ab")
     return [
-      displayResult(result, {indicatorColor: x => x}).split('\n').slice(0, 4).join('\n')
+      displayResult(result, {colors: false}).split('\n').slice(2, 6).join('\n')
     ]
   }, result: [
     "Couldn't continue passed line 1 column 1. \n"+
@@ -59,20 +59,18 @@ module.exports = [
   {name: 'displayResult multiple lines', run: function(){
     const simpleParser = ser(str('a\na\naaa'), str('bb\nbbb\nb'))
     const result = simpleParser.debug().parse("a\na\naaaxx\nxxx\nxxxxxx")
-    return displayResult(result, {indicatorColor: x => x, colors:false}).split('\n')
+    return displayResult(result, {colors:false}).split('\n')
   }, result: [
-   `Couldn't continue passed line 3 column 4. Expected: "bb`,
-   'bbb',
-   'b".',
+   'ser: [1:1] failed "a\\na\\naaaxx\\nxxx\\nxxxxxx"',
+   ' str("a\\na\\naaa"): [1:1] matched "a\\na\\naaa"',
+   ' str("bb\\nbbb\\nb"): [3:4] failed "xx\\nxxx\\nxxxxxx"',
+   `Couldn't continue passed line 3 column 4. Expected: "bb\\nbbb\\nb".`,
    ' 1 | a',
    ' 2 | a',
    ' 3 | aaaxx',
    '        ^',
    ' 4 | xxx',
    ' 5 | xxxxxx',
-   'ser: [1:1] failed "a\\na\\naaaxx\\nxxx\\nxxxxxx"',
-   ' str("a\\na\\naaa"): [1:1] matched "a\\na\\naaa"',
-   ' str("bb\\nbbb\\nb"): [3:4] failed "xx\\nxxx\\nxxxxxx"'
   ]},
 
   {name: 'displayDebugInfo', run: function(){
