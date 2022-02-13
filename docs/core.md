@@ -87,12 +87,12 @@ const parsers = lazyParsers({
     return regex(/[0-9]+/).chain(value => ok(Number(value)))
   },
   version: function() {
-    return seriesSepBy(str('.'), integer(), integer, integer())
+    return series({sepBy: str('.')}, integer(), integer, integer())
   },
 })
 ```
 
-In the above, notice that `integer()` and `integer` passed as parsers to `seriesSepBy` will be treated identically. The following functions are utilities used to do this internally, and can be useful externally for example in order to raise exceptions for bad input. 
+In the above, notice that `integer()` and `integer` passed as parsers to `series` will be treated identically. The following functions are utilities used to do this internally, and can be useful externally for example in order to raise exceptions for bad input.
 
 **`isParser(possibleParser)`** - Returns whether parsinator.js can recognize the input as a `Parser`. See `getPossibleParser` for more info.
 

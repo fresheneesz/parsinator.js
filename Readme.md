@@ -91,7 +91,7 @@ The code is internally split into separate logical modules, and this documentati
 
 Basic Parsers: `eof`, `ok`, `fail`, `str`, `regex`, `ser`, `alt`, `many`, `atLeast`, `atMost`, `times`, `timesBetween`, `not`, `peek`, `name`, `desc`, `node`
 
-More Parsers: `listOf`, `seriesSepBy`, `memoize`
+More Parsers: `listOf`, `series`, `memoize`, `isolate`
 
 The basic parsers are the bread and butter of this library. You'll probably use these parsers more than any other. The "more parsers" are more complex or higher level parsers. 
 

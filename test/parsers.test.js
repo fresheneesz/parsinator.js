@@ -103,7 +103,7 @@ module.exports = [
      ser({a: str('a'), b: str('b')})
    )(),
    input: "abd",
-   exception: 'A ser label object contains multiple labels: {a: str("a"), b: str("b")}'
+   exception: 'A ser label object contains multiple labels: {a: str("a"), b: str("b")}.'
   },
 
   // alt

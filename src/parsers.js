@@ -33,14 +33,14 @@ exports.ser = function(...parsers) {
   parsers = parsers.map((parser, n) => {
     if(isParser(parser)) {
       return parser
-    } else if(parser instanceof Object && !(parser instanceof Function)) {
+    } else if(parser instanceof Object && !(parser instanceof Function) && !(parser instanceof RegExp)) {
       let found = false, parserToReturn
       for(let curLabel in parser) {
         if(found) {
           const objectDisplay = '{'+Object.keys(parser).map((key) => {
-            return key+": "+(parser[key].name || JSON.stringify(parser[key]))
+            return key+": "+(getPossibleParser(parser[key]).name || JSON.stringify(parser[key]))
           }).join(', ')+'}'
-          throw new Error("A ser label object contains multiple labels: "+objectDisplay)
+          throw new Error("A ser label object contains multiple labels: "+objectDisplay+".")
         }
         found = true
         parserToReturn = parser[curLabel]

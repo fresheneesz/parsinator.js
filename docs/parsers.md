@@ -54,11 +54,12 @@
 * `separator` - A `Parser` used to match the separator in between `primaryParser` matches.
 * `primaryParser` - The primary parser to build a list of.
 
-**`seriesSepBy([options,] separator, ...parsers)`** - A list of sequential tokens separated by a separator. Returns the values for just the `parsers` and ignores the separator matches.
+**`series(options, ...parsers)`** - A series combinator (like `sep`) with more advanced options. Returns the values for just the `parsers` and ignores the separator matches.
 
 * `options` - An optional object with the following properties:
+  * `sepBy` - If set, will match the parsers as a list of sequential tokens separated by a separator parser `sepBy`.
   * `ignoreSep` - (Default: true) If true, the result of the separator is ignored.
-* `separator` - A `Parser` used to match the separator in between `primaryParser` matches.
+  * `wrap(parser)` - If set, each parser will be wrapped by that function. Should return a Parser.
 * `...parsers` - All the arguments after the first are `Parser`s that are matched in series, with the `separator` between them.
 
 **`memoize(parserFunction, options)`** - Memoizes the passed parserFunction, meaning that it will store the results of runs of the parser for given arguments and parser state, and return the cached results when possible. If your parser has a lot of backtracking that reparses particular tokens many times, this could improve performance of your parser. This returns a value that can be used identically to the passed in `parserFunction`.
@@ -66,3 +67,5 @@
 * `parserFunction` - This can either be a function that returns a `Parser`, or a bare `Parser`. 
 * `options` - An object with the following optional properties:
   * `relevantStatekeys` - An array of parser state keys (`Context._state`) that are relevant to the parser. If your language has many state items, this is a way to ensure that only the state items that matter to your parser are considered, which can improve performance by reducing the number of cache misses and therefore utilizing the cache more.
+
+**`isolate(parser)`** - Ensures any `Context` state mutated by `parser` is not propagated outside that parser. 

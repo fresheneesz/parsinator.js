@@ -3,7 +3,6 @@
 const core = require("./core")
 
 function str(string) {
-  debugger
   return core.Parser('str('+JSON.stringify(string)+')', function() {
     const start = this.index
     const end = this.index + string.length
@@ -38,7 +37,7 @@ function regex(regexp) {
 
 function isParser(parser) {
   return parser instanceof core.Parser ||
-         parser instanceof String ||
+         typeof(parser) === 'string' ||
          parser instanceof RegExp ||
          parser instanceof Function && parser() instanceof core.Parser
 }

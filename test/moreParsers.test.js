@@ -1,10 +1,26 @@
 const {str} = require("../src/basicParsers")
-const {ser, alt} = require("../src/parsers")
-const {listOf, seriesSepBy, memoize} = require("../src/moreParsers")
+const {ok, ser, alt} = require("../src/parsers")
+const {listOf, series, memoize, isolate} = require("../src/moreParsers")
 
 const memoizedA = memoize(str('a'))
 const memoizedString = memoize(function(string) {
   return str(string)
+})
+
+const wrapper = function(x) {
+  return ser('(', x, ')')
+}
+
+const initState = str('a').value(function(value) {
+  this.set('a', 'no')
+  return value
+})
+const modifyState = str('b').value(function(value) {
+  this.set('a', 'yes')
+  return value
+})
+const readState = str('c').value(function(value) {
+  return value += this.get('a')
 })
 
 module.exports = [
@@ -31,18 +47,21 @@ module.exports = [
     ok: true, value: ['a', ',', 'a']
   }},
 
-  // seriesSepBy
-  {name: 'seriesSepBy one item', parser: seriesSepBy(str(','), str('a')), input: "a", result: {
+  // series
+  {name: 'series one item', parser: series({sepBy: ','}, str('a')), input: "a", result: {
     ok: true, value: ['a']
   }},
-  {name: 'seriesSepBy three items', parser: seriesSepBy(str(','), str('a'), str('b'), str('c')), input: "a,b,c,a,a", result: {
+  {name: 'series three items', parser: series({sepBy: ','}, str('a'), str('b'), str('c')), input: "a,b,c,a,a", result: {
     ok: true, value: ['a','b','c']
   }},
-  {name: 'seriesSepBy fail', parser: seriesSepBy(str(','), str('a'), str('b'), str('c')), input: "a,b,d", result: {
+  {name: 'series fail', parser: series({sepBy: ','}, str('a'), str('b'), str('c')), input: "a,b,d", result: {
     ok: false, expected: new Set(['c']), context:{index:4}
   }},
-  {name: 'seriesSepBy ignoreSep', parser: seriesSepBy({ignoreSep: false}, str(','), str('a'), str('b')), input: "a,b", result: {
+  {name: 'series ignoreSep', parser: series({sepBy: ',', ignoreSep: false}, str('a'), str('b')), input: "a,b", result: {
     ok: true, value: ['a', ',', 'b']
+  }},
+  {name: 'series wrap', parser: series({wrap: wrapper}, str('a'), str('b')), input: "(a)(b)", result: {
+    ok: true, value: ['(', 'a', ')', '(', 'b', ')']
   }},
 
   // memoize - the same parser run at the same index in the same conditions will return a remembered result.
@@ -54,6 +73,11 @@ module.exports = [
   }},
   {name: 'memoize function', parser: alt(ser(memoizedString('a'), str('b')), ser(memoizedString('a'), str('c'))), input: "ac", result: {
     ok: true, value: ['a', 'c']
+  }},
+
+  // isolate
+  {name: 'isolate', parser: ser(initState, isolate(modifyState), readState), input: "abc", result: {
+    ok: true, value: ['a','b','cno']
   }},
 
   //*/

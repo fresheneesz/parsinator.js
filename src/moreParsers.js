@@ -3,7 +3,7 @@
 
 const {Parser} = require("./core")
 const {isParser, getPossibleParser} = require('./basicParsers')
-const {ser, many, timesBetween, name} = require("./parsers")
+const {ser, timesBetween, name} = require("./parsers")
 
 exports.listOf = function(/*[options], separatorParser, primaryParser*/) {
   if(isParser(arguments[0])) {
@@ -39,27 +39,25 @@ exports.listOf = function(/*[options], separatorParser, primaryParser*/) {
   )
 }
 
-exports.seriesSepBy = function(/*[options], separatorParser, ...parsers*/) {
-  if(isParser(arguments[0])) {
-    var options = {}
-    var separatorParser = getPossibleParser(arguments[0])
-    var parsers = Array.from(arguments).slice(1)
-  } else {
-    var options = arguments[0]
-    var separatorParser = getPossibleParser(arguments[1])
-    var parsers = Array.from(arguments).slice(2)
-  }
+exports.series = function(options, ...parsers) {
   if(options.ignoreSep === undefined) options.ignoreSep = true
 
   let lastParser = parsers[0]
-  if(parsers.length === 1) return getPossibleParser(parsers[0]).value(value => [value])
+  if(options.wrap) lastParser = options.wrap(lastParser)
+
+  if(parsers.length === 1) return getPossibleParser(lastParser).value(value => [value])
   for(let n=1; n<parsers.length; n++) {
-    const parser = parsers[n]
+    let parser = parsers[n]
     lastParser = lastParser.chain(function() {
-      return ser(separatorParser, parser).value(values => options.ignoreSep ? [values[1]]: values)
+      if(options.wrap) parser = options.wrap(parser)
+      if(options.sepBy) {
+        return ser(options.sepBy, parser).value(values => options.ignoreSep ? [values[1]]: values)
+      } else {
+        return parser
+      }
     })
   }
-  return name(`seriesSepBy(${separatorParser.name}, ...)`, lastParser.value(lists => {
+  return name(`series`, lastParser.value(lists => {
     let flattenedList = []
     lists.forEach(list => flattenedList = flattenedList.concat(list))
     return flattenedList
@@ -134,4 +132,12 @@ exports.memoize = function(parserFunction, options) {
     }
     return keys
   }
+}
+
+exports.isolate = function(parser) {
+  return Parser('isolate', function() {
+    const result = this.parse(parser, this.copy())
+    result.context._state = this._state
+    return result
+  })
 }
