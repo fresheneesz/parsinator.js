@@ -1,6 +1,7 @@
 // See ../docs/parsers.md for documentation.
 
-const {Parser, isParser, getPossibleParser} = require("./core")
+const {Parser} = require("./core")
+const {isParser, getPossibleParser} = require('./basicParsers')
 
 exports.eof = function() {
   return Parser('eof', function() {

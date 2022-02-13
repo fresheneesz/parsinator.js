@@ -132,7 +132,6 @@ All of the exports of these files are combined and exposed through the main scri
 * make a note about ignoring parser results in custom parsers notes - related to ignoreSep
 * more custom parsers notes
  * Note about using `Context.ok` or `Context.fail` on the most recent parse context. But make the opposite note if you decide state shouldn't be propagated downwards.
-* Put on npm
 * Write up details on how to interpret debug trace output
 * write up tutorial (note that the tutorial doesn't cover anything that isn't in the reference docs, but vice versa is not true)
 * Support streaming input.

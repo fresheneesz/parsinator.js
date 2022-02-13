@@ -1,7 +1,8 @@
 // This is a file for higher-level parsers. These parsers don't even depend directly on core, but are composed of the
 // basic parsers in parsers.js. The exports of this file are documented in ../docs/parsers.md
 
-const {Parser, getPossibleParser, isParser} = require("./core")
+const {Parser} = require("./core")
+const {isParser, getPossibleParser} = require('./basicParsers')
 const {ser, many, timesBetween, name} = require("./parsers")
 
 exports.listOf = function(/*[options], separatorParser, primaryParser*/) {

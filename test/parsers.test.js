@@ -1,4 +1,4 @@
-const {str, regex} = require("../src/core")
+const {str, regex} = require("../src/basicParsers")
 const {
   eof, ok, fail, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, name, desc, node
 } = require("../src/parsers")

@@ -1,4 +1,4 @@
-const {str} = require("../src/core")
+const {str} = require("../src/basicParsers")
 const {ser, alt} = require("../src/parsers")
 const {listOf, seriesSepBy, memoize} = require("../src/moreParsers")
 

@@ -3,6 +3,7 @@
 // debug information gathering. The exports in here are documented in docs/core.md.
 
 const proto = require("proto")
+const {getPossibleParser} = require('./basicParsers')
 
 const internal = {} // Indicates internal to prevent misuse.
 
@@ -131,7 +132,7 @@ const Context = proto(function() {
 })
 
 // The primary class for parsinator.js.
-const Parser = proto(function() {
+const Parser = exports.Parser = proto(function() {
   this.init = function() {
     ;[this.name,
       this.action, // A function that returns a ParseResult.
@@ -275,66 +276,9 @@ const Parser = proto(function() {
   }
 })
 
-function str(string) {
-  return Parser('str('+JSON.stringify(string)+')', function() {
-    const start = this.index
-    const end = this.index + string.length
-    if(this.input.slice(start, end) === string) {
-      return this.ok(end, string)
-    } else {
-      return this.fail(start, [string])
-    }
-  })
-}
-
-function regex(regexp) {
-  if(regexp instanceof String) regexp = RegExp(regexp)
-  for (const flag of regexp.flags) {
-    // Flags ignoreCase, dotAll, multiline, and unicode are suppported.
-    if (!['i','s','m','u'].includes(flag)) {
-      throw new Error("only the regexp flags 'imsu' are supported")
-    }
-  }
-  const sticky = new RegExp(regexp.source, regexp.flags + "y") // Force regex to only match at sticky.lastIndex
-  return new Parser('regex('+regexp+')', function() {
-    sticky.lastIndex = this.index
-    const match = this.input.match(sticky)
-    if (match) {
-      const end = this.index + match[0].length
-      const string = this.input.slice(this.index, end)
-      return this.ok(end, string)
-    }
-    return this.fail(this.index, [regexp.toString()])
-  })
-}
-
-function isParser(parser) {
-  return parser instanceof Parser ||
-         parser instanceof String ||
-         parser instanceof RegExp ||
-         parser instanceof Function && parser() instanceof Parser
-}
-
-function getPossibleParser(parser) {
-  if(parser instanceof Function) {
-    let possibleParser = parser()
-    if(possibleParser instanceof Parser) {
-      return possibleParser
-    }
-  } else if(typeof(parser) === 'string') {
-    return str(parser)
-  } else if(parser instanceof RegExp) {
-    return regex(parser)
-  }
-  // else
-  return parser
-}
-
 // An error that holds a ParseResult.
 const InternalError = proto(Error, function() {
   this.init = function(result) {
     this.result = result
   }
 })
-
-module.exports = {Parser, str, regex, isParser, getPossibleParser}

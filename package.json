@@ -8,7 +8,7 @@
     "javascript",
     "node"
   ],
-  "version": "0.0.1",
+  "version": "1.0.0",
   "dependencies": {
     "proto": "1.0.17",
     "colors": "",
@@ -22,6 +22,6 @@
   "main": "parsinator.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/fresheneesz/parsinator"
+    "url": "git://github.com/fresheneesz/parsinator.js"
   }
 }

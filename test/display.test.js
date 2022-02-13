@@ -1,4 +1,4 @@
-const {str} = require("../src/core")
+const {str} = require("../src/basicParsers")
 const {
   eof, ok, fail, alt, ser, not
 } = require("../src/parsers")

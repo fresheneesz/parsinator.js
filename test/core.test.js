@@ -1,4 +1,5 @@
-var {Parser, isParser, getPossibleParser} = require("../src/core")
+var {Parser} = require("../src/core")
+const {isParser, getPossibleParser} = require('../src/basicParsers')
 
 
 module.exports = [
