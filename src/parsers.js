@@ -35,6 +35,17 @@ exports.fail = function(expected) {
   })
 }
 
+exports.range = function(begin, end) {
+  return Parser(`range(${begin},${end})`, function() {
+    const ch = this.input[this.index]
+    if (begin <= ch && ch <= end) {
+      return this.ok(this.index+1, ch)
+    } else {
+      return this.fail(this.index, [`${begin}-${end}`])
+    }
+  })
+}
+
 exports.ser = function(...parsers) {
   if(parsers.length === 0) throw new Error("Call to `ser` passes no parsers.")
   if(parsers.length === 1) {
@@ -69,7 +80,8 @@ exports.ser = function(...parsers) {
     }
   })
 
-  return Parser('ser', function() {
+  const name = `seq(${parsers.map(p => p.name).join(', ')})`
+  return Parser(name, function() {
     let results
     if(labels.length === 0) {
       results = []
@@ -127,7 +139,8 @@ exports.alt = function(...parsers) {
     return parser
   })
 
-  return Parser('alt', function() {
+  const name = `alt(${parsers.map(p => p.name).join(', ')})`
+  return Parser(name, function() {
     let expected = new Set, furthest = this.index
     for(let n=0; n<parsers.length; n++) {
       const parser = parsers[n]
@@ -147,18 +160,22 @@ exports.alt = function(...parsers) {
 }
 
 exports.many = function(parser) {
+  parser = getPossibleParser(parser)
   return _timesInternal('many('+parser.name+')', parser)
 }
 
 exports.atLeast = function(numberOfTimes, parser) {
+  parser = getPossibleParser(parser)
   return _timesInternal('atLeast('+numberOfTimes+','+parser.name+')', parser, {atLeast: numberOfTimes})
 }
 
 exports.atMost = function(numberOfTimes, parser) {
+  parser = getPossibleParser(parser)
   return _timesInternal('atMost('+numberOfTimes+','+parser.name+')', parser, {atMost: numberOfTimes})
 }
 
 exports.times = function(numberOfTimes, parser) {
+  parser = getPossibleParser(parser)
   if(numberOfTimes === undefined) throw new Error('times not passed a numberOfTimes: '+numberOfTimes)
   return _timesInternal('times('+numberOfTimes+','+parser.name+')', parser, {atLeast: numberOfTimes, atMost: numberOfTimes})
 }

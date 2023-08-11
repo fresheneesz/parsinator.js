@@ -1,6 +1,6 @@
 const {getPossibleParser, name} = require("../src/basicParsers")
 const {
-  eof, any, ok, fail, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, desc, node
+  eof, any, ok, fail, range, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, desc, node
 } = require("../src/parsers")
 var {lazy} = require("../src/lazy")
 
@@ -64,6 +64,20 @@ module.exports = [
   }},
   {name: 'fail single value', parser: fail('expectedValue'), input: "nonempty", result: {
     ok: false, expected: new Set(['expectedValue'])
+  }},
+    
+  // range
+  {name: 'range', parser: range('a', 'c'), input: "a", result: {
+    ok: true, value: "a"
+  }},
+  {name: 'range', parser: range('a', 'c'), input: "b", result: {
+    ok: true, value: "b"
+  }},
+  {name: 'range', parser: range('a', 'c'), input: "c", result: {
+    ok: true, value: "c"
+  }},
+  {name: 'range', parser: range('a', 'c'), input: "d", result: {
+    ok: false
   }},
 
   // str

@@ -3,6 +3,8 @@
 const core = require("./core")
 
 function str(string) {
+  if (string.length === 0) throw new Error("String parser cannot be the empty string")
+  
   return core.Parser(JSON.stringify(string), function() {
     const start = this.index
     const end = this.index + string.length

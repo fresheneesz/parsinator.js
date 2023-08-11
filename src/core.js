@@ -53,7 +53,7 @@ const Parser = exports.Parser = proto(function() {
     if(isChain) {
       if(context.debug) context.addDebugParseInit("chain", context.index, context._state)
       chainContinuations = [() => Parser(this.name, this.action)].concat(chainContinuations)
-      return maybeTryCatch(context, isInternal, () => {
+      return maybeTryCatch(this.name, context, isInternal, () => {
         const result = runContinuations(context, chainContinuations)
         // This ends up being the result of the entire chain.
         if(context.debug) context.addDebugResult(result)
@@ -61,7 +61,7 @@ const Parser = exports.Parser = proto(function() {
       })
     } else {
       if(context.debug) context.addDebugParseInit(this.name, context.index, context._state)
-      return maybeTryCatch(context, isInternal, () => {
+      return maybeTryCatch(this.name, context, isInternal, () => {
         const result = this.action.apply(context)
         if(context.debug) context.addDebugResult(result)
         return result
@@ -70,7 +70,7 @@ const Parser = exports.Parser = proto(function() {
   }
 
   // Runs an action that should return a ParseResult and catches and propagates errors properly.
-  function maybeTryCatch(context, isInternal, action) {
+  function maybeTryCatch(name, context, isInternal, action) {
     if(context.debug) {
       try {
         return action()
@@ -82,6 +82,7 @@ const Parser = exports.Parser = proto(function() {
         if(e instanceof InternalError) {
           var result = e.result
         } else {
+          e._parsinatorName = name
           var result = ParseResult(false, context, undefined, ['no error'], e)
         }
         context.addDebugResult(result)
