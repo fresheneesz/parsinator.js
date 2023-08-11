@@ -301,7 +301,7 @@ const Context = proto(function() {
 })
 
 // An error that holds a ParseResult.
-const InternalError = proto(Error, function() {
+const InternalError = exports.InternalError = proto(Error, function() {
   this.init = function(result) {
     this.result = result
   }

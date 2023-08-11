@@ -51,9 +51,8 @@ function displayError(result, options) {
   }
 
   var failMessage = !result.error? "Expected: "+buildExpectedText(result)+"." : ''
-  var exceptionMessage = result.error? "Got "+result.error.stack : ''
-  if (result.error._parsinatorName) {
-    exceptionMessage = `In parser '${result.error._parsinatorName}' \n`+exceptionMessage
+  if (result.error) {
+    var exceptionMessage = `In parser '${result.error._parsinatorName}', got ${result.error.stack || result.error}`
   }
 
   const sourceDisplay = buildSourceDisplay(result.context.input, info, options.inputInfoCache)

@@ -6,7 +6,7 @@ const lazyTests = createParserTests(require("./test/lazy.test"))
 const displayTests = require("./test/display.test.js")
 
 runTests([
-    ...coreTests, 
+  ...coreTests, 
   ...parserTests, 
   ...moreParsersTests, 
   ...lazyTests, 

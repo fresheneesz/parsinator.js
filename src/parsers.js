@@ -1,6 +1,6 @@
 // See ../docs/parsers.md for documentation.
 
-const {Parser} = require("./core")
+const {Parser, InternalError} = require("./core")
 const {isParser, getPossibleParser, maybeInvalidParserException} = require('./basicParsers')
 
 exports.any = function() {
@@ -48,39 +48,19 @@ exports.range = function(begin, end) {
 
 exports.ser = function(...parsers) {
   if(parsers.length === 0) throw new Error("Call to `ser` passes no parsers.")
-  if(parsers.length === 1) {
-    if (serParserIsLabelMap(parsers[0])) {
-      assertLabelMapIsValid(parsers[0])
-      for (const parser of parsers) {
-        return getPossibleParser(parser)
-      }
-    } else {
-      return getPossibleParser(parsers[0])
-    }
-  }
+  if(parsers.length === 1) return getParserInfo(parsers[0]).parser
 
   // Normalize any labeled parser and extract labels
   const labels = []
   parsers = parsers.map((parser, n) => {
-    if(isParser(parser)) {
-      return parser
-    } else if(serParserIsLabelMap(parser)) {
-      assertLabelMapIsValid(parser)
-      let parserToReturn
-      for(let curLabel in parser) {
-        parserToReturn = parser[curLabel]
-        if(!isParser(parserToReturn)) {
-          throw new InternalError("ser passed something other than a parser as label '"+curLabel+"': "+parser+".")
-        }
-        labels[n] = curLabel
-      }
-      return parserToReturn
-    } else {
-      throw new InternalError("ser passed something other than a parser or labeled parser object: "+parser+".")
+    const info = getParserInfo(parser)
+    if (info.label) {
+      labels[n] = info.label
     }
+    return info.parser
   })
 
-  const name = `seq(${parsers.map(p => p.name).join(', ')})`
+  const name = `ser(${parsers.map(p => p.name).join(', ')})`
   return Parser(name, function() {
     let results
     if(labels.length === 0) {
@@ -109,35 +89,53 @@ exports.ser = function(...parsers) {
 
     return lastResult.context.ok(lastResult.context.index, results)
   })
-}
-
-// Returns true if the value is a label-map object for ser
-function serParserIsLabelMap(value) {
-  return value instanceof Object && !(value instanceof Function) && !(value instanceof RegExp)
-}
-
-function assertLabelMapIsValid(labelMap) {
-  let found = false
-  for (const key in labelMap) {
-      if(found) {
-        const objectDisplay = '{'+Object.keys(labelMap).map((key) => {
-          return key+": "+(getPossibleParser(labelMap[key]).name || JSON.stringify(labelMap[key]))
-        }).join(', ')+'}'
-        throw new Error("A ser label object contains multiple labels: "+objectDisplay+".")
+  
+  // Gets the parser from a ser input (which can be a Parser or a lable-map).
+  function getParserInfo(value) {
+    if(isParser(value)) {
+      return {parser: getPossibleParser(value)}
+    } else if (serParserIsLabelMap(value)) {
+      assertLabelMapIsValid(value)
+      for (const label in value) {
+        const parserToReturn = value[label]
+        if(!isParser(parserToReturn)) {
+          throw new InternalError("ser passed something other than a parser as label '"+label+"': "+parserToReturn+".")
+        }
+        return {label, parser: getPossibleParser(parserToReturn)}
       }
-      found = true
+    } else {
+      throw new InternalError("ser passed something other than a parser or labeled parser object: "+value+".")
+    }
+  }
+  
+  // Returns true if the value is a label-map object for ser
+  function serParserIsLabelMap(value) {
+    return value instanceof Object && !(value instanceof Function) && !(value instanceof RegExp)
+  }
+  
+  function assertLabelMapIsValid(labelMap) {
+    let found = false
+    for (const key in labelMap) {
+        if(found) {
+          const objectDisplay = '{'+Object.keys(labelMap).map((key) => {
+            return key+": "+(getPossibleParser(labelMap[key]).name || JSON.stringify(labelMap[key]))
+          }).join(', ')+'}'
+          throw new Error("A ser label object contains multiple labels: "+objectDisplay+".")
+        }
+        found = true
+    }
   }
 }
 
 exports.alt = function(...parsers) {
-  if(parsers.length === 0) throw new Error("Call to `ser` passes no parsers.")
-  if(parsers.length === 1) return getPossibleParser(parsers[0])
-
-  // Validate parsers input.
+  // Validate parsers input and normalize them.
   parsers = parsers.map((parser) => {
     maybeInvalidParserException('alt', parser)
-    return parser
+    return getPossibleParser(parser)
   })
+  
+  if(parsers.length === 0) throw new Error("Call to `ser` passes no parsers.")
+  if(parsers.length === 1) return getPossibleParser(parsers[0])
 
   const name = `alt(${parsers.map(p => p.name).join(', ')})`
   return Parser(name, function() {

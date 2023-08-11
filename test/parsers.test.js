@@ -4,9 +4,13 @@ const {
 } = require("../src/parsers")
 var {lazy} = require("../src/lazy")
 
-const modifyState = lazy('modifyState', function() {
+const modifyStateAndFail = lazy('modifyStateAndFail', function() {
   this.set('a', 'x') // The state is being set even tho this is returning a fail. This should never be done.
   return fail(0, 'something else')
+})
+const modifyState = lazy('modifyState', function() {
+  this.set('a', 'x')
+  return ok('ok')
 })
 const parseBasedOnState = lazy('parseBasedOnState', function() {
   if(this.get('a')) {
@@ -116,6 +120,9 @@ module.exports = [
   {name: 'ser retains state', parser: ser(x,'y'), input: "xy", result: {
     ok: true, context:{index:2, _state: new Map([['state', 3]])}
   }},
+  {name: 'ser passes on state', parser: ser(modifyState(), parseBasedOnState()), input: "x", result: {
+    ok: true, value: ['ok', 'x']
+  }},
   // Note that this fakes a parser just to make sure the exception is caught within the test runner.
   {name: 'ser no parsers passed', parser: {parse: ()=>ser()}, input: "", exception:
     "Call to `ser` passes no parsers."
@@ -138,7 +145,7 @@ module.exports = [
   {name: 'alt fail', parser: alt('a', 'b'), input: "cab", result: {
     ok: false, expected: new Set(['a','b']), context: {index: 0}
   }},
-  {name: 'alt doesnt allow state pollution', parser: alt(modifyState(), parseBasedOnState()), input: "y", result: {
+  {name: 'alt doesnt allow state pollution', parser: alt(modifyStateAndFail(), parseBasedOnState()), input: "y", result: {
     ok: true, value: 'y'
   }},
 

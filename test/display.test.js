@@ -1,5 +1,5 @@
 const {
-  eof, ok, fail, alt, ser, not
+  eof, ok, fail, alt, ser, not, timesBetween
 } = require("../src/parsers")
 var {lazy} = require("../src/lazy")
 var {InputInfoCache, displayResult, displayDebugInfo} = require("../src/display")
@@ -53,7 +53,7 @@ module.exports = [
     "Couldn't continue passed line 1 column 1. \n"+
     ' 1 | ab\n' +
     '     ^\n'+
-    'Got Error: hi'
+    'In parser \'"a"\', got Error: hi'
   ]},
 
   {name: 'displayResult multiple lines', run: function(){
@@ -61,7 +61,7 @@ module.exports = [
     const result = simpleParser.debug().parse("a\na\naaaxx\nxxx\nxxxxxx")
     return displayResult(result, {colors:false}).split('\n')
   }, result: [
-   'ser: [1:1] failed "a\\na\\naaaxx\\nxxx\\nxxxxxx"',
+   'ser("a\\na\\naaa", "bb\\nbbb\\nb"): [1:1] failed "a\\na\\naaaxx\\nxxx\\nxxxxxx"',
    ' "a\\na\\naaa": [1:1] matched "a\\na\\naaa"',
    ' "bb\\nbbb\\nb": [3:4] failed "xx\\nxxx\\nxxxxxx"',
    `Couldn't continue passed line 3 column 4. Expected: "bb\\nbbb\\nb".`,
@@ -81,13 +81,13 @@ module.exports = [
       displayDebugInfo(result, {colors: false})
     ]
   }, result: [
-    'alt: [1:1] matched "b"\n' +
+    'alt("a", "b"): [1:1] matched "b"\n' +
     ' "a": [1:1] failed "bb"\n' +
     ' "b": [1:1] matched "b"'
   ]},
 
   {name: 'displayDebugInfo infinite recursion', run: function(){
-    const infiniteParser = ser('').chain(function() {
+    const infiniteParser = timesBetween(0, Infinity, 'x').chain(function() {
       return infiniteParser
     })
     const result = infiniteParser.debug().parse("a")
