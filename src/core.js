@@ -71,10 +71,10 @@ const Parser = exports.Parser = proto(function() {
 
   // Runs an action that should return a ParseResult and catches and propagates errors properly.
   function maybeTryCatch(name, context, isInternal, action) {
-    if(context.debug) {
-      try {
-        return action()
-      } catch(e) {
+    try {
+      return action()
+    } catch(e) {
+      if(context.debug) {
         // The idea here is that any exception should be caught, recorded in the debug
         // record, and re-thrown to propagate it up and then returned as a top-level error result.
         // An uncaught exception is not a normal parse failure and it basically should be
@@ -91,9 +91,14 @@ const Parser = exports.Parser = proto(function() {
         } else {
           return result
         }
+      } else {
+        if (!e._parsinatorName) {
+          e._parsinatorName = name
+          e.message = "In '"+e._parsinatorName+"', "+e.message
+        }
+        
+        throw e
       }
-    } else {
-      return action()
     }
   }
 
