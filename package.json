@@ -3,10 +3,19 @@
   "description": "Yet another parser combinator library for javascript. This one support state.",
   "keywords": [
     "parse",
+    "parser",
+    "parsers",
     "parsing",
     "combinator",
     "javascript",
-    "node"
+    "node",
+    "text",
+    "string",
+    "parser combinator",
+    "parser combinators",
+    "parser-combinator",
+    "functional",
+    "composable"
   ],
   "version": "1.0.0",
   "dependencies": {

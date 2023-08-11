@@ -1,6 +1,6 @@
-const {str, regex} = require("../src/basicParsers")
+const {getPossibleParser, name} = require("../src/basicParsers")
 const {
-  eof, ok, fail, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, name, desc, node
+  eof, any, ok, fail, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek, desc, node
 } = require("../src/parsers")
 var {lazy} = require("../src/lazy")
 
@@ -10,14 +10,14 @@ const modifyState = lazy('modifyState', function() {
 })
 const parseBasedOnState = lazy('parseBasedOnState', function() {
   if(this.get('a')) {
-    return str(this.get('a'))
+    return ser(this.get('a'))
   } else {
-    return str('y')
+    return ser('y')
   }
 })
 
 const x = lazy('x', function() {
-  return str('x').chain(function(value) {
+  return ser('x').chain(function(value) {
     this.set('state', 3)
     return ok(value)
   })
@@ -42,6 +42,14 @@ module.exports = [
     ok: false, expected: new Set(["EOF"])
   }},
 
+  // any
+  {name: 'any', parser: any(), input: "ab", result: {
+    ok: true, value: 'a'
+  }},
+  {name: 'any empty string', parser: any(), input: "", result: {
+    ok: false, expected: new Set(["any"])
+  }},
+
   // ok
   {name: 'ok', parser: ok('value'), input: "nonempty", result: {
     ok: true, value: "value"
@@ -59,39 +67,39 @@ module.exports = [
   }},
 
   // str
-  {name: 'str', parser: str('a'), input: "a", result: {
+  {name: 'str', parser: ser('a'), input: "a", result: {
     ok: true, value: "a"
   }},
-  {name: 'str fail', parser: str('a'), input: "b", result: {
+  {name: 'str fail', parser: ser('a'), input: "b", result: {
     ok: false, expected: new Set(["a"])
   }},
 
   // regex
-  {name: 'regex', parser: regex(/a+/), input: "aaaaaaa", result: {
+  {name: 'regex', parser: ser(/a+/), input: "aaaaaaa", result: {
     ok: true, value: "aaaaaaa"
   }},
-  {name: 'regex fail', parser: regex(/a+/), input: "b", result: {
+  {name: 'regex fail', parser: ser(/a+/), input: "b", result: {
     ok: false, expected: new Set(["/a+/"])
   }},
 
   // ser
-  {name: 'ser', parser: ser(str('a'),str('b'),str('c')), input: "abc", result: {
+  {name: 'ser', parser: ser('a','b','c'), input: "abc", result: {
     ok: true, value: ['a', 'b', 'c']
   }},
   // The undefined: undefined there is testing to cover a bug where an undefined label was used as a key.
-  {name: 'ser map', parser: ser({a: str('a')},str('b'),{c: str('c')}), input: "abc", result: {
+  {name: 'ser map', parser: ser({a: 'a'},'b',{c: 'c'}), input: "abc", result: {
     ok: true, value: {a: 'a', undefined: undefined, c:'c'}
   }},
-  {name: 'ser fail start', parser: ser(str('a'),str('b'),str('c')), input: "bbd", result: {
+  {name: 'ser fail start', parser: ser('a','b','c'), input: "bbd", result: {
     ok: false, expected: new Set(["a"])
   }},
-  {name: 'ser fail repeat', parser: ser(str('a'),str('b'),str('c')), input: "aaa", result: {
+  {name: 'ser fail repeat', parser: ser('a','b','c'), input: "aaa", result: {
     ok: false, expected: new Set(["b"])
   }},
-  {name: 'ser fail end', parser: ser(str('a'),str('b'),str('c')), input: "abd", result: {
+  {name: 'ser fail end', parser: ser('a','b','c'), input: "abd", result: {
     ok: false, expected: new Set(["c"])
   }},
-  {name: 'ser retains state', parser: ser(x,str('y')), input: "xy", result: {
+  {name: 'ser retains state', parser: ser(x,'y'), input: "xy", result: {
     ok: true, context:{index:2, _state: new Map([['state', 3]])}
   }},
   // Note that this fakes a parser just to make sure the exception is caught within the test runner.
@@ -100,20 +108,20 @@ module.exports = [
   },
   {name: 'ser map more than one label',
    parser: lazy('lazy', () =>
-     ser({a: str('a'), b: str('b')})
+     ser({a: 'a', b: 'b'})
    )(),
    input: "abd",
-   exception: 'A ser label object contains multiple labels: {a: str("a"), b: str("b")}.'
+   exception: 'A ser label object contains multiple labels: {a: "a", b: "b"}.'
   },
 
   // alt
-  {name: 'alt first', parser: ser(alt(str('a'), str('b')), alt(str('a'), str('b'))), input: "ab", result: {
+  {name: 'alt first', parser: ser(alt('a', 'b'), alt('a', 'b')), input: "ab", result: {
     ok: true, value: ['a', 'b'], context: {index: 2}
   }},
-  {name: 'alt second', parser: ser(alt(str('a'), str('b')), alt(str('a'), str('b'))), input: "ab", result: {
+  {name: 'alt second', parser: ser(alt('a', 'b'), alt('a', 'b')), input: "ab", result: {
     ok: true, value: ['a', 'b'], context: {index: 2}
   }},
-  {name: 'alt fail', parser: alt(str('a'), str('b')), input: "cab", result: {
+  {name: 'alt fail', parser: alt('a', 'b'), input: "cab", result: {
     ok: false, expected: new Set(['a','b']), context: {index: 0}
   }},
   {name: 'alt doesnt allow state pollution', parser: alt(modifyState(), parseBasedOnState()), input: "y", result: {
@@ -121,51 +129,51 @@ module.exports = [
   }},
 
   // times
-  {name: 'times', parser: times(2, str('a')), input: "aa", result: {
+  {name: 'times', parser: times(2, 'a'), input: "aa", result: {
     ok: true, value: ['a', 'a']
   }},
-  {name: 'times no match', parser: times(2, str('a')), input: "ab", result: {
+  {name: 'times no match', parser: times(2, 'a'), input: "ab", result: {
     ok: false, expected: new Set(['a'])
   }},
 
   // atLeast
-  {name: 'atLeast', parser: atLeast(2, str('a')), input: "aa", result: {
+  {name: 'atLeast', parser: atLeast(2, 'a'), input: "aa", result: {
     ok: true, value: ['a', 'a']
   }},
-  {name: 'atLeast more', parser: atLeast(2, str('a')), input: "aaaa", result: {
+  {name: 'atLeast more', parser: atLeast(2, 'a'), input: "aaaa", result: {
     ok: true, value: ['a', 'a', 'a', 'a']
   }},
-  {name: 'atLeast less', parser: atLeast(2, str('a')), input: "a", result: {
+  {name: 'atLeast less', parser: atLeast(2, 'a'), input: "a", result: {
     ok: false, expected: new Set(['a'])
   }},
 
   // atMost
-  {name: 'atMost', parser: atMost(2, str('a')), input: "aa", result: {
+  {name: 'atMost', parser: atMost(2, 'a'), input: "aa", result: {
     ok: true, value: ['a', 'a']
   }},
-  {name: 'atMost more', parser: atMost(2, str('a')), input: "aaaa", result: {
+  {name: 'atMost more', parser: atMost(2, 'a'), input: "aaaa", result: {
     ok: true, value: ['a', 'a']
   }},
-  {name: 'atMost less', parser: atMost(2, str('a')), input: "a", result: {
+  {name: 'atMost less', parser: atMost(2, 'a'), input: "a", result: {
     ok: true, value: ['a']
   }},
 
   // timesBetween
-  {name: 'timesBetween', parser: timesBetween(2, 4, str('a')), input: "aa", result: {
+  {name: 'timesBetween', parser: timesBetween(2, 4, 'a'), input: "aa", result: {
     ok: true, value: ['a', 'a']
   }},
-  {name: 'timesBetween more', parser: timesBetween(2, 4, str('a')), input: "aaaaa", result: {
+  {name: 'timesBetween more', parser: timesBetween(2, 4, 'a'), input: "aaaaa", result: {
     ok: true, value: ['a', 'a', 'a', 'a']
   }},
-  {name: 'timesBetween less', parser: atLeast(2, str('a')), input: "a", result: {
+  {name: 'timesBetween less', parser: atLeast(2, 'a'), input: "a", result: {
     ok: false, expected: new Set(['a'])
   }},
 
   // many
-  {name: 'many', parser: many(str('a')), input: "aaaaab", result: {
+  {name: 'many', parser: many('a'), input: "aaaaab", result: {
     ok: true, value: ['a', 'a', 'a', 'a', 'a']
   }},
-  {name: 'many no matches', parser: many(str('a')), input: "bbb", result: {
+  {name: 'many no matches', parser: many('a'), input: "bbb", result: {
     ok: true, value: []
   }},
   {name: 'many retains state', parser: many(x), input: "xx", result: {
@@ -173,42 +181,42 @@ module.exports = [
   }},
 
   // not
-  {name: 'not', parser: not(str('a')), input: "b", result: {
+  {name: 'not', parser: not('a'), input: "b", result: {
     ok: true, value: undefined, context:{index:0}
   }},
-  {name: 'not fail', parser: not(str('a')), input: "a", result: {
+  {name: 'not fail', parser: not('a'), input: "a", result: {
     ok: false, expected: new Set(['not a']), context:{index:0}
   }},
 
   // peek
-  {name: 'peek', parser: peek(str('a')), input: "a", result: {
+  {name: 'peek', parser: peek('a'), input: "a", result: {
     ok: true, value: 'a', context:{index:0}
   }},
-  {name: 'peek fail', parser: peek(str('a')), input: "b", result: {
+  {name: 'peek fail', parser: peek('a'), input: "b", result: {
     ok: false, expected: new Set(['a']), context:{index:0}
   }},
 
   // name
-  {name: 'name', parser: name('x', str('a')), input: "a", result: {
+  {name: 'name', parser: name('x', 'a'), input: "a", result: {
     ok: true, value: 'a', context:{index:1}
   }},
-  {name: 'name fail', parser: name('jaweij', str('a')).debug(), input: "b", result: {
+  {name: 'name fail', parser: name('jaweij', 'a').debug(), input: "b", result: {
     ok: false, expected: new Set(['a']), context:{index:0, debugRecord: {name: 'jaweij'}}
   }},
 
   // desc
-  {name: 'desc', parser: desc('x', str('a')), input: "a", result: {
+  {name: 'desc', parser: desc('x', 'a'), input: "a", result: {
     ok: true, value: 'a', context:{index:1}
   }},
-  {name: 'desc fail', parser: desc('the first letter of the alphabet', str('a')), input: "b", result: {
+  {name: 'desc fail', parser: desc('the first letter of the alphabet', 'a'), input: "b", result: {
     ok: false, expected: new Set(['the first letter of the alphabet']), context:{index:0}
   }},
 
   // node
-  {name: 'node', parser: node('nodeName', str('a')), input: "a", result: {
+  {name: 'node', parser: node('nodeName', 'a'), input: "a", result: {
     ok: true, value: {name: 'nodeName', value: 'a', start: 0, end: 1}, context:{index:1}
   }},
-  {name: 'node fail', parser: node('nodeName', str('a')), input: "b", result: {
+  {name: 'node fail', parser: node('nodeName', 'a'), input: "b", result: {
     ok: false, expected: new Set(['a']), context:{index:0}
   }},
 

@@ -5,10 +5,10 @@ const moreParsersTests = createParserTests(require("./test/moreParsers.test"))
 const lazyTests = createParserTests(require("./test/lazy.test"))
 const displayTests = require("./test/display.test.js")
 
-runTests(coreTests.concat(parserTests).concat(moreParsersTests).concat(lazyTests).concat(displayTests))
-// runTests(coreTests)
-// runTests(lazyTests)
-// runTests(parserTests)
-// runTests(inputInfoCacheTests)
-// runTests(displayTests)
-// runTests(moreParsersTests)
+runTests([
+    ...coreTests, 
+  ...parserTests, 
+  ...moreParsersTests, 
+  ...lazyTests, 
+  ...displayTests
+])

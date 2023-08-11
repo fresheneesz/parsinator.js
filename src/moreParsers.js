@@ -2,8 +2,8 @@
 // basic parsers in parsers.js. The exports of this file are documented in ../docs/parsers.md
 
 const {Parser} = require("./core")
-const {isParser, getPossibleParser} = require('./basicParsers')
-const {ser, timesBetween, name} = require("./parsers")
+const {isParser, getPossibleParser, name} = require('./basicParsers')
+const {ser, timesBetween} = require("./parsers")
 
 exports.listOf = function(/*[options], separatorParser, primaryParser*/) {
   if(isParser(arguments[0])) {
@@ -41,6 +41,7 @@ exports.listOf = function(/*[options], separatorParser, primaryParser*/) {
 
 exports.series = function(options, ...parsers) {
   if(options.ignoreSep === undefined) options.ignoreSep = true
+  parsers = parsers.map(parser => getPossibleParser(parser))
 
   let lastParser = parsers[0]
   if(options.wrap) lastParser = options.wrap(lastParser)
@@ -68,8 +69,8 @@ exports.memoize = function(parserFunction, options) {
   options = options || {}
   const memory = new Map
 
-  if(parserFunction instanceof Parser) {
-    const parser = parserFunction
+  if(isParser(parserFunction)) {
+    const parser = getPossibleParser(parserFunction)
     return createMemoizedParser(parser, [])
   } else {
     return function() {

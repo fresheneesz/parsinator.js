@@ -3,7 +3,7 @@
 const core = require("./core")
 
 function str(string) {
-  return core.Parser('str('+JSON.stringify(string)+')', function() {
+  return core.Parser(JSON.stringify(string), function() {
     const start = this.index
     const end = this.index + string.length
     if(this.input.slice(start, end) === string) {
@@ -23,7 +23,7 @@ function regex(regexp) {
     }
   }
   const sticky = new RegExp(regexp.source, regexp.flags + "y") // Force regex to only match at sticky.lastIndex
-  return new core.Parser('regex('+regexp+')', function() {
+  return new core.Parser(regexp.toString(), function() {
     sticky.lastIndex = this.index
     const match = this.input.match(sticky)
     if (match) {
@@ -57,4 +57,19 @@ function getPossibleParser(parser) {
   return parser
 }
 
-module.exports = {str, regex, isParser, getPossibleParser}
+function name(name, parser) {
+  parser = getPossibleParser(parser)
+  maybeInvalidParserException('name', parser)
+  const renamedParser = new core.Parser(name, parser.action, parser.chainContinuations)
+  parser.shouldDebug = renamedParser.shouldDebug
+  return renamedParser
+}
+
+// name - The name of the parser this is being called from.
+function maybeInvalidParserException(name, parser) {
+  if(!isParser(parser)) {
+    throw new Error(name+" passed something other than a parser: "+parser)
+  }
+}
+
+module.exports = {isParser, getPossibleParser, name, maybeInvalidParserException}

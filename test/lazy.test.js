@@ -1,26 +1,25 @@
-const {str} = require("../src/basicParsers")
 const {alt, eof, ser} = require("../src/parsers")
 const {lazy, lazyParsers, importParsers} = require("../src/lazy")
 
 const wrappedParserA = lazy('wrappedParserA', function() {
-  return alt(str('b'), wrappedParserB('a'))
+  return alt('b', wrappedParserB('a'))
 })
 const wrappedParserB = lazy('wrappedParserB', function(arg1) {
-  return ser(str(arg1), wrappedParserA())
+  return ser(arg1, wrappedParserA())
 })
 
 const wrappedParsers = lazyParsers({
   recursiveParserA: function() {
-    return ser(str('a'), recursiveParserB())
+    return ser('a', recursiveParserB())
   },
   recursiveParserB: function() {
-    return ser(str('b'), alt(recursiveParserA(), eof()))
+    return ser('b', alt(recursiveParserA(), eof()))
   }
 })
 
 const wrappedParserC = lazy("wrappedParserC", function(string) {
   if(string) {
-    return str(string)
+    return string
   } else {
     this.set('x', 'a')
     return wrappedParserD()

@@ -2,14 +2,15 @@
 
 const {Parser} = require("./core")
 
-function lazy(name, parser) {
-  if(!(parser instanceof Function)) {
+function lazy(name, getParser) {
+  if(!(getParser instanceof Function)) {
     throw new Error("Something other than a function passed as the second argument to `lazy`.")
   }
   return function() {
     const args = arguments
     return Parser(name, function() {
-      return this.parse(parser.apply(this, args), this)
+      const parser = getParser.apply(this, args)
+      return this.parse(parser, this)
     })
   }
 }

@@ -5,7 +5,6 @@ const {isParser, getPossibleParser} = require('../src/basicParsers')
 module.exports = [
 
 
-
   //*
   {name: 'ok parser', run: function(){
     const results = []
@@ -144,6 +143,15 @@ module.exports = [
     ok: false, value: undefined, context: {index: 4}, expected: new Set(['a'])
   }},
 
+  {name: 'join', run: function() {
+    var parser = Parser('parser', function() {
+      return this.ok(4, ['a', ['b'], [['c'], 'd']])
+    }).join()
+    return parser.parse('testString')
+  }, result: {
+    ok: true, value: 'abcd'
+  }},
+
   {name: 'ok parser state', run: function(){
     const results = []
     var parser = Parser('parser', function() {
@@ -164,10 +172,18 @@ module.exports = [
     true
   ]},
 
-  {name: 'parser wrong input', run: function(){
-    Parser('parser', 'wrong')
-  }, exception:
-    "Argument passed to parse is neither a string nor a Context object."
+  {name: 'Parser wrong input', 
+    run: function(){
+      Parser('parser', 'wrong')
+    }, 
+    exception: "No action passed to Parser constructor"
+  },
+
+  {name: 'Parser.parse wrong input', 
+    run: function(){
+      Parser('parser', function() {}).parse(1)
+    }, 
+    exception: "Argument passed to parse is neither a string nor a Context object."
   },
 
   {name: 'debugger: basic output', run: function(){
@@ -313,7 +329,7 @@ module.exports = [
       getPossibleParser(3)
     ]
   }, result: [
-    'x', 'y', 'str("hi")', 'regex(/hello/)', 3
+    'x', 'y', '"hi"', '/hello/', 3
   ]},
 
   //*/

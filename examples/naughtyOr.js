@@ -4,7 +4,7 @@
 // user of your parser in a better way, or reporting many errors and warnings rather than just a single one.
 
 const {
-  eof, fail, ok, str, regex, alt, ser, many,
+  eof, fail, ok, alt, ser, many,
   listOf,
   lazyParsers, importParsers,
   displayResult, InputInfoCache
@@ -26,28 +26,28 @@ const declarativeLanguage = lazyParsers({
   },
   declarationSeparator: function() {
     return ser(
-      naughtyOr(str(';'), str('').chain(function(value) {
+      naughtyOr(';', ser('').chain(function(value) {
         const cache = InputInfoCache(this.input)
         const info = cache.get(this.index)
         return ok({error: ["Missing semi colon at line "+info.line+", column "+info.column+"."]})
       })),
-      many(str('\n'))
+      many('\n')
     )
   },
   declaration: function() {
-    return ser(name, str('='), value)
+    return ser(name, '=', value)
   },
   name: function() {
-    return regex(/[a-z]+/)
+    return ser(/[a-z]+/)
   },
   value: function() {
     return alt(number, string)
   },
   number: function() {
-    return regex(/[0-9]+/).value(Number)
+    return ser(/[0-9]+/).value(Number)
   },
   string: function() {
-    return ser(str('"'), regex(/[^"]*/), str('"')).value(values => values[1])
+    return ser('"', /[^"]*/, '"').value(values => values[1])
   },
   // Runs a goodParser in normal mode, but if the parser switches to failure mode, the naughtyParser
   // is attempted to be parsed as well.

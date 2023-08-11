@@ -13,7 +13,9 @@ function runTests(tests) {
   tests.forEach(function(test) {
     try {
       let result = test.run()
-      if(testResultMatches(result, test.result)) {
+      if(test.exception) {
+        recordFailure(test.name, test.exception, "Unsuccessfully got no exception.")
+      } else if(testResultMatches(result, test.result)) {
         logSuccess(test.name)
       } else {
         recordFailure(test.name, test.result, result)

@@ -3,7 +3,7 @@
 // debug information gathering. The exports in here are documented in docs/core.md.
 
 const proto = require("proto")
-const {getPossibleParser} = require('./basicParsers')
+const {getPossibleParser, name} = require('./basicParsers')
 
 const internal = {} // Indicates internal to prevent misuse.
 
@@ -54,7 +54,7 @@ const Context = proto(function() {
   }
 
   this.ok = function(
-    index, // The new 'next' index. The parser succeeded up through the previous index.
+    index, // The new 'next' index. The parser succeeded up to this index.
     value  // The resulting value to return from the parser.
   ) {
     return ParseResult(true, this.move(index), value)
@@ -138,7 +138,7 @@ const Parser = exports.Parser = proto(function() {
       this.action, // A function that returns a ParseResult.
       this.chainContinuations, // A list of continuations registered by `chain`. This is intended to only be used internally.
     ] = arguments
-    if(!this.action) throw new Error("No action passed to Parser constructor")
+    if(!(this.action instanceof Function)) throw new Error("No action passed to Parser constructor")
     if(this.chainContinuations === undefined) this.chainContinuations = []
     this.shouldDebug = false
   }
@@ -243,14 +243,37 @@ const Parser = exports.Parser = proto(function() {
     result.value = resultValues
     return result
   }
+  
+  this.join = function() {
+    return this.value(list => joinInternal(list))
+    
+    function joinInternal(list) {
+      if(!(list instanceof Array)) {
+          throw new Error("Used `join` on a parser result that isn't only a nested array of strings: "+JSON.stringify(list))
+      } 
+      
+      var s = []
+      for (const item of list) {
+        if(typeof(item) === 'string') {
+          s.push(item)
+        } else {
+          s.push(joinInternal(item))
+        }
+      }
+  
+      return s.join('')
+    }
+  }
 
   this.chain = function(continuation) {
+    // The name of this parser should be the same as the parser chain is being called on, because that will be the name
+    // reported for the first leg of the chain.
     return Parser(this.name, this.action, this.chainContinuations.concat(continuation))
   }
 
   this.value = function(valueMapper) {
     const parser = this
-    return Parser('map', function() {
+    return Parser('value('+this.name+')', function() {
       const result = this.parse(parser, this)
       if(result.ok) {
         return result.context.ok(result.context.index, valueMapper.call(result.context, result.value))
@@ -261,12 +284,12 @@ const Parser = exports.Parser = proto(function() {
   }
 
   this.map = function(mapper) {
-    return this.value(function(values) {
+    return name('map('+this.name+')', this.value(function(values) {
       const context = this
       return values.map(function() {
         return mapper.apply(context, arguments)
       })
-    })
+    }))
   }
 
   this.debug = function(shouldDebug) {
@@ -282,3 +305,4 @@ const InternalError = proto(Error, function() {
     this.result = result
   }
 })
+

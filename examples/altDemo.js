@@ -1,18 +1,18 @@
 const {
-  str, alt,
+  ser, alt,
   lazyParsers, importParsers,
   displayResult
 } = require("../parsinator")
 
 const parsers = lazyParsers({
   a: function() {
-    return str('a')
+    return ser('a')
   },
   b: function() {
-    return str('b')
+    return ser('b')
   },
   c: function() {
-    return str('c')
+    return ser('c')
   },
   abc: function() {
     return alt(a(), b(), c())

@@ -1,8 +1,14 @@
 # Parsers
 
+#### String and regex parsers
+
+There are no exported parser functions for string and regex parsers, so just use `ser` to wrap a string or regex alone. Note that only the flags `i`, `s`, `m`, and `u` are supported for regex.
+
 ## Basic Parsers
 
 **`eof`** - Matches the end of input, returns undefined.
+
+**`any`** - Matches any single character.
 
 **`ok(value)`** - Returns a parser that consumes no input and returns a success `value`.
 
@@ -10,16 +16,10 @@
 
 * `expected` - A `Set` or array of expectations (these expectations should be something that fits the form "Expected _, _, or _."). 
 
-**`str(string)`** - Matches an exact string ([example](../docs/staticStrings.md)).
-
-**`regex(regexp)`** - Matches a regular expression.
-
-* `regexp` - This should be a RegExp object. Only the flags `i`, `s`, `m`, and `u` are supported.
-
 **`ser(parser, parser, ...)`** - Runs a series of parsers in sequence ([example](../docs/serDemo.md)). Each argument can either be:
 
 * A Parser object, or
-* An object with a single key-value pair, where the key is a label and the value is a Parser object to run. If any argument is a key-value pair object like that, the result will be a key-value pair object with keys matching each argument's key and each value will be the value returned by the parser. Unlabeled parsers won't have their result values included in the result value of the `ser` parse. For example, `ser({a: str('a')}, str('b'))` would have the result `{a: 'a'}` if it succeeded.
+* An object with a single key-value pair, where the key is a label and the value is a Parser object to run. If any argument is a key-value pair object like that, the result will be a key-value pair object with keys matching each argument's key and each value will be the value returned by the parser. Unlabeled parsers won't have their result values included in the result value of the `ser` parse. For example, `ser({a: 'a'}, 'b')` would have the result `{a: 'a'}` if it succeeded.
 
 **`alt(parser, parser, ...)`** - Matches one of a series of alternate parsers ([example](../docs/altDemo.md)). Tries one after the other until it succeeds. Fails if none succeed.
 
@@ -54,7 +54,7 @@
 * `separator` - A `Parser` used to match the separator in between `primaryParser` matches.
 * `primaryParser` - The primary parser to build a list of.
 
-**`series(options, ...parsers)`** - A series combinator (like `sep`) with more advanced options. Returns the values for just the `parsers` and ignores the separator matches.
+**`series(options, ...parsers)`** - A series combinator (like `ser`) with more advanced options. Returns the values for just the `parsers` and ignores the separator matches.
 
 * `options` - An optional object with the following properties:
   * `sepBy` - If set, will match the parsers as a list of sequential tokens separated by a separator parser `sepBy`.

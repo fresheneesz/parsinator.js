@@ -1,24 +1,24 @@
 const {
-  fail, str, regex, alt, ser, times,
+  fail, alt, ser, times,
   lazyParsers, importParsers,
   displayResult
 } = require("../parsinator")
 
 const parsers = lazyParsers({
   block: function() {
-    return ser(indentDeclaration, indent, str('hello'))
+    return ser(indentDeclaration, indent, 'hello')
   },
   indent: function() {
-    return times(this.get('indent'), str(' '))
+    return times(this.get('indent'), ' ')
   },
   indentDeclaration: function() {
-    return ser(str('indent='), number, str(':'), str('\n')).value(function(value) {
+    return ser('indent=', number, ':', '\n').value(function(value) {
       this.set('indent', Number(value[1]))
       return value
     })
   },
   number: function() {
-    return regex(/[0-9]/)
+    return ser(/[0-9]/)
   },
 })
 eval(importParsers(parsers, 'parsers'))

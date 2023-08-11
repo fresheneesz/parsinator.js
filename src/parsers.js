@@ -1,7 +1,17 @@
 // See ../docs/parsers.md for documentation.
 
 const {Parser} = require("./core")
-const {isParser, getPossibleParser} = require('./basicParsers')
+const {isParser, getPossibleParser, maybeInvalidParserException} = require('./basicParsers')
+
+exports.any = function() {
+  return Parser('any', function() {
+    if(this.index < this.input.length) {
+      return this.ok(this.index + 1, this.input[this.index])
+    } else {
+      return this.fail(this.index, ["any"])
+    }
+  })
+}
 
 exports.eof = function() {
   return Parser('eof', function() {
@@ -27,31 +37,35 @@ exports.fail = function(expected) {
 
 exports.ser = function(...parsers) {
   if(parsers.length === 0) throw new Error("Call to `ser` passes no parsers.")
+  if(parsers.length === 1) {
+    if (serParserIsLabelMap(parsers[0])) {
+      assertLabelMapIsValid(parsers[0])
+      for (const parser of parsers) {
+        return getPossibleParser(parser)
+      }
+    } else {
+      return getPossibleParser(parsers[0])
+    }
+  }
 
   // Normalize any labeled parser and extract labels
   const labels = []
   parsers = parsers.map((parser, n) => {
     if(isParser(parser)) {
       return parser
-    } else if(parser instanceof Object && !(parser instanceof Function) && !(parser instanceof RegExp)) {
-      let found = false, parserToReturn
+    } else if(serParserIsLabelMap(parser)) {
+      assertLabelMapIsValid(parser)
+      let parserToReturn
       for(let curLabel in parser) {
-        if(found) {
-          const objectDisplay = '{'+Object.keys(parser).map((key) => {
-            return key+": "+(getPossibleParser(parser[key]).name || JSON.stringify(parser[key]))
-          }).join(', ')+'}'
-          throw new Error("A ser label object contains multiple labels: "+objectDisplay+".")
-        }
-        found = true
         parserToReturn = parser[curLabel]
         if(!isParser(parserToReturn)) {
-          throw new Error("ser passed something other than a parser as label '"+curLabel+"': "+parser+".")
+          throw new InternalError("ser passed something other than a parser as label '"+curLabel+"': "+parser+".")
         }
         labels[n] = curLabel
       }
       return parserToReturn
     } else {
-      throw new Error("ser passed something other than a parser or labeled parser object: "+parser+".")
+      throw new InternalError("ser passed something other than a parser or labeled parser object: "+parser+".")
     }
   })
 
@@ -85,8 +99,27 @@ exports.ser = function(...parsers) {
   })
 }
 
+// Returns true if the value is a label-map object for ser
+function serParserIsLabelMap(value) {
+  return value instanceof Object && !(value instanceof Function) && !(value instanceof RegExp)
+}
+
+function assertLabelMapIsValid(labelMap) {
+  let found = false
+  for (const key in labelMap) {
+      if(found) {
+        const objectDisplay = '{'+Object.keys(labelMap).map((key) => {
+          return key+": "+(getPossibleParser(labelMap[key]).name || JSON.stringify(labelMap[key]))
+        }).join(', ')+'}'
+        throw new Error("A ser label object contains multiple labels: "+objectDisplay+".")
+      }
+      found = true
+  }
+}
+
 exports.alt = function(...parsers) {
   if(parsers.length === 0) throw new Error("Call to `ser` passes no parsers.")
+  if(parsers.length === 1) return getPossibleParser(parsers[0])
 
   // Validate parsers input.
   parsers = parsers.map((parser) => {
@@ -118,11 +151,11 @@ exports.many = function(parser) {
 }
 
 exports.atLeast = function(numberOfTimes, parser) {
-  return _timesInternal('atLeast('+parser.name+')', parser, {atLeast: numberOfTimes})
+  return _timesInternal('atLeast('+numberOfTimes+','+parser.name+')', parser, {atLeast: numberOfTimes})
 }
 
 exports.atMost = function(numberOfTimes, parser) {
-  return _timesInternal('atMost('+parser.name+')', parser, {atMost: numberOfTimes})
+  return _timesInternal('atMost('+numberOfTimes+','+parser.name+')', parser, {atMost: numberOfTimes})
 }
 
 exports.times = function(numberOfTimes, parser) {
@@ -131,7 +164,7 @@ exports.times = function(numberOfTimes, parser) {
 }
 
 exports.timesBetween = function(atLeast, atMost, parser) {
-  return _timesInternal('timesBetween('+parser.name+')', parser, {atLeast, atMost})
+  return _timesInternal('timesBetween('+atLeast+'-'+atMost+','+parser.name+')', parser, {atLeast, atMost})
 }
 
 // Runs a parser a number of times with some constraints.
@@ -144,8 +177,8 @@ function _timesInternal(
 ) {
   maybeInvalidParserException(name, parser)
 
-  const maxParses = constraints && constraints.atMost || Infinity
-  const minParses = constraints && constraints.atLeast || 0
+  const maxParses = constraints?.atMost || Infinity
+  const minParses = constraints?.atLeast || 0
 
   return Parser(name, function() {
     const results = []
@@ -219,17 +252,4 @@ exports.node = function(name, parser) {
     })
     return this.parse(transformedParser, this)
   })
-}
-
-exports.name = function(name, parser) {
-  maybeInvalidParserException('name', parser)
-  parser.name = name
-  return parser
-}
-
-// name - The name of the parser this is being called from.
-function maybeInvalidParserException(name, parser) {
-  if(!isParser(parser)) {
-    throw new Error(name+" passed something other than a parser: "+parser)
-  }
 }

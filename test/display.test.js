@@ -1,4 +1,3 @@
-const {str} = require("../src/basicParsers")
 const {
   eof, ok, fail, alt, ser, not
 } = require("../src/parsers")
@@ -19,7 +18,7 @@ module.exports = [
   ]},
 
   {name: 'displayResult fail', run: function(){
-    const simpleParser = alt(str('a'), str('b'))
+    const simpleParser = alt('a', 'b')
     const result = simpleParser.parse("c")
     return [
       displayResult(result, {indicatorColor: x => x})
@@ -31,7 +30,7 @@ module.exports = [
   ]},
 
   {name: 'displayResult fail on eof', run: function(){
-    const simpleParser = ser(str('a'), str('b'))
+    const simpleParser = ser('a', 'b')
     const result = simpleParser.parse("a")
     return [
       displayResult(result, {indicatorColor: x => x})
@@ -43,7 +42,7 @@ module.exports = [
   ]},
 
   {name: 'displayResult exception', run: function(){
-    const exceptionParser = str('a').chain(function() {
+    const exceptionParser = ser('a').chain(function() {
       throw new Error('hi')
     })
     const result = exceptionParser.debug().parse("ab")
@@ -58,13 +57,13 @@ module.exports = [
   ]},
 
   {name: 'displayResult multiple lines', run: function(){
-    const simpleParser = ser(str('a\na\naaa'), str('bb\nbbb\nb'))
+    const simpleParser = ser('a\na\naaa', 'bb\nbbb\nb')
     const result = simpleParser.debug().parse("a\na\naaaxx\nxxx\nxxxxxx")
     return displayResult(result, {colors:false}).split('\n')
   }, result: [
    'ser: [1:1] failed "a\\na\\naaaxx\\nxxx\\nxxxxxx"',
-   ' str("a\\na\\naaa"): [1:1] matched "a\\na\\naaa"',
-   ' str("bb\\nbbb\\nb"): [3:4] failed "xx\\nxxx\\nxxxxxx"',
+   ' "a\\na\\naaa": [1:1] matched "a\\na\\naaa"',
+   ' "bb\\nbbb\\nb": [3:4] failed "xx\\nxxx\\nxxxxxx"',
    `Couldn't continue passed line 3 column 4. Expected: "bb\\nbbb\\nb".`,
    ' 1 | a',
    ' 2 | a',
@@ -75,7 +74,7 @@ module.exports = [
   ]},
 
   {name: 'displayDebugInfo', run: function(){
-    const simpleParser = alt(str('a'), str('b'))
+    const simpleParser = alt('a', 'b')
     const result = simpleParser.debug().parse("bb")
 
     return [
@@ -83,12 +82,12 @@ module.exports = [
     ]
   }, result: [
     'alt: [1:1] matched "b"\n' +
-    ' str("a"): [1:1] failed "bb"\n' +
-    ' str("b"): [1:1] matched "b"'
+    ' "a": [1:1] failed "bb"\n' +
+    ' "b": [1:1] matched "b"'
   ]},
 
   {name: 'displayDebugInfo infinite recursion', run: function(){
-    const infiniteParser = str('').chain(function() {
+    const infiniteParser = ser('').chain(function() {
       return infiniteParser
     })
     const result = infiniteParser.debug().parse("a")
@@ -143,9 +142,9 @@ module.exports = [
 
   {name: 'InputInfoCache allow asking about 1 index passed the input', run: function(){
     const cache = InputInfoCache("hi")
-    cache.get(2)
-  }, exception:
-    {line: 3, column: 3}
+    return cache.get(2)
+  }, result:
+    {line: 1, column: 3}
   },
 
   {name: 'InputInfoCache invalid index', run: function(){

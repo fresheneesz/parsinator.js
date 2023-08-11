@@ -10,13 +10,13 @@ const parsers = lazyParsers({
     return alt(number, array)
   },
   number: function() {
-    return regex(/[0-9]+/).value(Number)
+    return ser(/[0-9]+/).value(Number)
   },
   array: function() {
     return ser(
-      str('('),
-      {items: listOf(str(' '), expression)},
-      str(')')
+      '(',
+      {items: listOf(' ', expression)},
+      ')'
     ).value(value => value.items)
   },
 })

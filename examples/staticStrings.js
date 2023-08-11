@@ -1,15 +1,15 @@
 const {
-  str, ser,
+  ser,
   lazyParsers, importParsers,
   displayResult
 } = require("../parsinator")
 
 const parsers = lazyParsers({
   apple: function() {
-    return str('apple')
+    return ser('apple')
   },
   banana: function() {
-    return str('banana')
+    return ser('banana')
   },
   applebanana: function() {
     return ser(apple(), banana())

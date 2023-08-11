@@ -1,16 +1,16 @@
 const {
-  eof, ok, fail, str, regex, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek,
+  eof, ok, fail, alt, many, ser, times, atLeast, atMost, timesBetween, not, peek,
   lazy, importParsers,
   displayResult,
   memoize
 } = require("../parsinator")
 
-const ws = regex(/[ \n]*/)
-const plus = str("+")
-const num = regex(/[0-9]/)
+const ws = ser(/[ \n]*/)
+const plus = ser("+")
+const num = ser(/[0-9]/)
 const side = lazy('side', function() {
   return alt(
-    ser(str("("), ws, expr, ws, str(")")),
+    ser("(", ws, expr, ws, ")"),
     num
   )
 })

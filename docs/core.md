@@ -9,6 +9,8 @@
 
 **`parser.parse(input)`**  - Runs the parser `action` on the relevant input and returns the `ParseResult` returned by the `action`. Note that if debugging is on (see below), it will record the exception in the `ParseResult` instead of throwing it. Also note that if you're writing a custom parser combinator, you should use `context.parse` below **instead** of running `parser.parse`, for debuggability reasons. 
 
+**`parser.join()`**  - Convenience method to concatenate together a result that consists of a nested array of strings. 
+
 **`parser.chain(continuation)`** - Allows access to the value returned by the parser this is called on and returns a new parser to continue parsing with. If the parser returns an ok `ParseResult`, calls `continuation` to get the next parser to continue parsing from. See [docs/chainDemo.md](../docs/chainDemo.md) for an example.
 
 * `continuation(value)` - Should return a `Parser`. The passed `value` is the value of the previously run parser and gets the current `Context` as `this`.
@@ -84,10 +86,10 @@ For convenience, parsinator.js allows your code to pass argumentless functions t
 ```javascript
 const parsers = lazyParsers({
   integer: function() {
-    return regex(/[0-9]+/).chain(value => ok(Number(value)))
+    return ser(/[0-9]+/).chain(value => ok(Number(value)))
   },
   version: function() {
-    return series({sepBy: str('.')}, integer(), integer, integer())
+    return series({sepBy: '.'}, integer(), integer, integer())
   },
 })
 ```
@@ -121,7 +123,7 @@ return Parser('str('+JSON.stringify(string)+')', function() {
 
 Notice that there are two main code paths: one that calls `this.ok` (`Context.ok`) and one that calls `this.fail`. Generally your parser can sometimes succeed and sometimes fail. 
 
-Also note  that the name passed to `Parser` is more detailed than just the name of the parser function. Adding some information based on the arguments passed to the parser function helps make more sense of information displayed when you're debugging your parser. For parser combinators (that take other parsers as arguments), its often useful to include the name of subparsers in the name of the parse, which you can get with `parser.name`.
+Also note that the name passed to `Parser` is more detailed than just the name of the parser function. Adding some information based on the arguments passed to the parser function helps make more sense of information displayed when you're debugging your parser. For parser combinators (that take other parsers as arguments), its often useful to include the name of subparsers in the name of the parse, which you can get with `parser.name`.
 
 I'll also reiterate what has already been said above: if your custom parser is a combinator that uses subparsers, its important to use `this.parse` (`Context.parse`) inside your `Parser` action instead of calling `subparser.parse` directly. This is again for setting up proper debugability. If you don't use it, your debug records probably won't end up formed correctly. 
 
