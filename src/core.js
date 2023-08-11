@@ -7,130 +7,6 @@ const {getPossibleParser, name} = require('./basicParsers')
 
 const internal = {} // Indicates internal to prevent misuse.
 
-const ParseResult = proto(function() {
-  this.init = function() {
-      ;[this.ok, // Either true or false.
-        this.context, // The Context that the parser parsed to. When this.ok is false, this indicates the furthest
-                      // it was able to parse.
-        this.value, // The success value returned by the parser, if this.ok is true.
-        this.expected, // A Set of expected parser matches if this.ok is false.
-        this.error, // An exception, if one happened while running in debug mode. This should only possibly exist
-                    // if this.ok is false.
-      ] = arguments
-    // this.debugRecord // Can be set in debug mode.
-  }
-
-  this.copy = function() {
-    return ParseResult(this.ok, this.context, this.value, this.expected, this.error)
-  }
-})
-
-const Context = proto(function() {
-  this.init = function() {
-    ;[this.input, // The string source being parsed.
-      this.index, // The current index the parser is at in the input.
-      this._state,  // A Map of named values set by parsers.
-      this.debug // If true, the context creates debug records.
-    ] = arguments
-
-    if(this._state === undefined) {
-      this._state = new Map()
-    }
-  }
-
-  this.move = function(index) {
-    if(index < this.index) {
-      throw new Error("Parser attempted to move an index backward to index: "+index+" from index"+this.index+".")
-    }
-    const newContext = Context(this.input, index, new Map(this._state), this.debug)
-    if(this.debug) {
-      newContext.debugRecord = this.debugRecord
-    }
-    return newContext
-  }
-
-  this.copy = function() {
-    return this.move(this.index)
-  }
-
-  this.ok = function(
-    index, // The new 'next' index. The parser succeeded up to this index.
-    value  // The resulting value to return from the parser.
-  ) {
-    return ParseResult(true, this.move(index), value)
-  }
-
-  this.fail = function(
-    index, // The farthest index it was able to successfully parse to. The parser
-           // succeeded up through the previous index.
-    expected // A list (Array or Set) of strings where each string is a failed expectation to be
-            // displayed to the user in a list like "Expected to find ..., ..., and ... in the input".
-  ) {
-    if(!(expected instanceof Set)) {
-      if(!(expected instanceof Array)) expected = [expected]
-      expected = new Set(expected)
-    }
-    return ParseResult(false, this.move(index), undefined, expected)
-  }
-
-  // Gets a state value.
-  this.get = function(key) {
-    return this._state.get(key)
-  }
-
-  // Sets a state value.
-  this.set = function(key, value) {
-    this._state.set(key, value)
-  }
-
-  this.parse = function(parser, curContext) {
-    if(!curContext) throw new Error("Context.parse not passed a curContext.")
-    parser = getPossibleParser(parser)
-    if(this === curContext) {
-      curContext = this.copy()
-    }
-    if(curContext.debug) {
-      this.createNewDebugSubrecord(curContext)
-    }
-    return parser.parse(curContext, internal)
-  }
-
-  // == Debug-related methods ==
-
-  // Initializes a new debug record.
-  this.initDebug = function() {
-    const newRecord = {}
-    this.debugRecord = newRecord
-    this.curDebugSection = newRecord
-    this.debug = true
-  }
-
-  // Creates a new debug subrecord in this Context, the target of the subrecord being owned by the passed Context.
-  // Note that this expects curContext to not already have a debugRecord or curDebugSubsection.
-  this.createNewDebugSubrecord = function(curContext) {
-    if(this.curDebugSection.subRecords === undefined) {
-      this.curDebugSection.subRecords = []
-    }
-    curContext.debugRecord = this.debugRecord
-    curContext.curDebugSection = {}
-    this.curDebugSection.subRecords.push(curContext.curDebugSection)
-  }
-
-  // Adds debug info available before parsing has started.
-  this.addDebugParseInit = function(name, startIndex, startState) {
-    this.curDebugSection.name = name
-    this.curDebugSection.startIndex = startIndex
-    this.curDebugSection.startState = new Map(startState)
-  }
-
-  // Adds the result to the debug record.
-  this.addDebugResult = function(result) {
-    // Copy this so any state changes don't mutate this record.
-    this.curDebugSection.result = Object.assign({}, result)
-    this.curDebugSection.result.context = result.context.copy()
-  }
-})
-
 // The primary class for parsinator.js.
 const Parser = exports.Parser = proto(function() {
   this.init = function() {
@@ -296,6 +172,130 @@ const Parser = exports.Parser = proto(function() {
     if(shouldDebug === undefined) shouldDebug = true
     this.shouldDebug = shouldDebug
     return this
+  }
+})
+
+const ParseResult = proto(function() {
+  this.init = function() {
+      ;[this.ok, // Either true or false.
+        this.context, // The Context that the parser parsed to. When this.ok is false, this indicates the furthest
+                      // it was able to parse.
+        this.value, // The success value returned by the parser, if this.ok is true.
+        this.expected, // A Set of expected parser matches if this.ok is false.
+        this.error, // An exception, if one happened while running in debug mode. This should only possibly exist
+                    // if this.ok is false.
+      ] = arguments
+    // this.debugRecord // Can be set in debug mode.
+  }
+
+  this.copy = function() {
+    return ParseResult(this.ok, this.context, this.value, this.expected, this.error)
+  }
+})
+
+const Context = proto(function() {
+  this.init = function() {
+    ;[this.input, // The string source being parsed.
+      this.index, // The current index the parser is at in the input.
+      this._state,  // A Map of named values set by parsers.
+      this.debug // If true, the context creates debug records.
+    ] = arguments
+
+    if(this._state === undefined) {
+      this._state = new Map()
+    }
+  }
+
+  this.move = function(index) {
+    if(index < this.index) {
+      throw new Error("Parser attempted to move an index backward to index: "+index+" from index"+this.index+".")
+    }
+    const newContext = Context(this.input, index, new Map(this._state), this.debug)
+    if(this.debug) {
+      newContext.debugRecord = this.debugRecord
+    }
+    return newContext
+  }
+
+  this.copy = function() {
+    return this.move(this.index)
+  }
+
+  this.ok = function(
+    index, // The new 'next' index. The parser succeeded up to this index.
+    value  // The resulting value to return from the parser.
+  ) {
+    return ParseResult(true, this.move(index), value)
+  }
+
+  this.fail = function(
+    index, // The farthest index it was able to successfully parse to. The parser
+           // succeeded up through the previous index.
+    expected // A list (Array or Set) of strings where each string is a failed expectation to be
+            // displayed to the user in a list like "Expected to find ..., ..., and ... in the input".
+  ) {
+    if(!(expected instanceof Set)) {
+      if(!(expected instanceof Array)) expected = [expected]
+      expected = new Set(expected)
+    }
+    return ParseResult(false, this.move(index), undefined, expected)
+  }
+
+  // Gets a state value.
+  this.get = function(key) {
+    return this._state.get(key)
+  }
+
+  // Sets a state value.
+  this.set = function(key, value) {
+    this._state.set(key, value)
+  }
+
+  this.parse = function(parser, curContext) {
+    if(!curContext) throw new Error("Context.parse not passed a curContext.")
+    parser = getPossibleParser(parser)
+    if(this === curContext) {
+      curContext = this.copy()
+    }
+    if(curContext.debug) {
+      this.createNewDebugSubrecord(curContext)
+    }
+    return parser.parse(curContext, internal)
+  }
+
+  // == Debug-related methods ==
+
+  // Initializes a new debug record.
+  this.initDebug = function() {
+    const newRecord = {}
+    this.debugRecord = newRecord
+    this.curDebugSection = newRecord
+    this.debug = true
+  }
+
+  // Creates a new debug subrecord in this Context, the target of the subrecord being owned by the passed Context.
+  // Note that this expects curContext to not already have a debugRecord or curDebugSubsection.
+  this.createNewDebugSubrecord = function(curContext) {
+    if(this.curDebugSection.subRecords === undefined) {
+      this.curDebugSection.subRecords = []
+    }
+    curContext.debugRecord = this.debugRecord
+    curContext.curDebugSection = {}
+    this.curDebugSection.subRecords.push(curContext.curDebugSection)
+  }
+
+  // Adds debug info available before parsing has started.
+  this.addDebugParseInit = function(name, startIndex, startState) {
+    this.curDebugSection.name = name
+    this.curDebugSection.startIndex = startIndex
+    this.curDebugSection.startState = new Map(startState)
+  }
+
+  // Adds the result to the debug record.
+  this.addDebugResult = function(result) {
+    // Copy this so any state changes don't mutate this record.
+    this.curDebugSection.result = Object.assign({}, result)
+    this.curDebugSection.result.context = result.context.copy()
   }
 })
 
