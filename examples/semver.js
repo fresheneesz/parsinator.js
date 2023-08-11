@@ -1,5 +1,5 @@
 const {
-  ok, ser, str, regex,
+  ok, ser
   lazyParsers, importParsers,
   displayResult
 } = require("../parsinator")

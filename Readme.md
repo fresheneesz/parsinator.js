@@ -3,11 +3,10 @@
 Yet another [parser combinator](http://en.wikipedia.org/wiki/Parser_combinator) library with a couple unique features:
 
 * State, which helps for contextful languages of any reasonable amount of complexity (like ones that have LR conflicts or whitespace delimiting).
+* Supports parameterized parsers and recursive parsers.
 * Powerful debug recording and displaying. This can be enormously helpful figuring out why your parser isn't working as you expect.
 
-## Parser Combinators
-
-A parser combinator 
+![parsinator-doofinshmirtz](docs/parsinator.jpg]
 
 ## Example
 
@@ -20,19 +19,19 @@ Also, notice that `block().debug()` is what `parse` is called on. This means a d
 ```javascript
 const parsers = lazyParsers({
   block: function() {
-    return ser(indentDeclaration, indent, str('hello'))
+    return ser(indentDeclaration, indent, 'hello')
   },
   indent: function() {
-    return times(this.get('indent'), str(' '))
+    return times(this.get('indent'), ' ')
   },
   indentDeclaration: function() {
-    return ser(str('indent='), number, str(':'), str('\n')).value(function(value) {
+    return ser('indent=', number, ':\n').value(function(value) {
       this.set('indent', Number(value[1]))
       return value
     })
   },
   number: function() {
-    return regex(/[0-9]/)
+    return ser(/[0-9]/)
   },
 })
 eval(importParsers(parsers, 'parsers'))
@@ -62,7 +61,7 @@ There's a number of examples that show various aspects of using parsinator.js.
 
 ```javascript
 const {
-  str, regex, alt, ser, times, // ...
+  alt, ser, times, // ...
   lazyParsers, importParsers, // ...
   displayResult // ...
 } = require("parsinator.js")
@@ -77,19 +76,17 @@ Every parser returns a `ParseResult` that indicates whether it succeeded (`ok=tr
 For convenience, any place that expects a `Parser` can also accept a string, a RegExp, or an argumentless function that returns a `Parser`.
 
 ```
-const hello = str('hello')
-const hello2 = function() { return str('hello') }
+const hello = ser('hello')
+const hello2 = function() { return ser('hello') }
 
 ser(hello, hello2).parse('hellohello') // Succeeds
 ```
-
-
 
 The code is internally split into separate logical modules, and this documentation will use that separation as a way to compartmentalize the parts of this library. We'll start with the most useful part of the library.
 
 ### [Parsers](docs/parsers.md)
 
-Basic Parsers: `eof`, `ok`, `fail`, `str`, `regex`, `ser`, `alt`, `many`, `atLeast`, `atMost`, `times`, `timesBetween`, `not`, `peek`, `name`, `desc`, `node`
+Basic Parsers: `eof`, `ok`, `fail`, `ser`, `alt`, `many`, `atLeast`, `atMost`, `times`, `timesBetween`, `not`, `peek`, `name`, `desc`, `node`
 
 More Parsers: `listOf`, `series`, `memoize`, `isolate`
 
@@ -128,14 +125,11 @@ All of the exports of these files are combined and exposed through the main scri
 
 
 ## Todo
-* Figure out if you want state to propagate downward
 * make a note about ignoring parser results in custom parsers notes - related to ignoreSep
 * more custom parsers notes
  * Note about using `Context.ok` or `Context.fail` on the most recent parse context. But make the opposite note if you decide state shouldn't be propagated downwards.
 * Write up details on how to interpret debug trace output
-* write up tutorial (note that the tutorial doesn't cover anything that isn't in the reference docs, but vice versa is not true)
-* Support streaming input.
-* See if parsing unicode presents unique challenges as is mentioned in https://github.com/GregRos/parjs
-* Investigate what [parjs](https://github.com/GregRos/parjs)'s traces look like
+* write up tutorial (note that the tutorial shouldn't cover anything that isn't in the reference docs, but vice versa is not true)
+* Support streaming input. Note this requires a stream that allows backtracking. Not sure how to structure that.
 * Mention somewhere to be careful about using new style lambda functions, because they don't retain their own `this` and thus won't be able to access the current context (but may instead access an upper context).
 * Inform people (SO?)
