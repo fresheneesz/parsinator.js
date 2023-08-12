@@ -86,7 +86,7 @@ The code is internally split into separate logical modules, and this documentati
 
 ### [Parsers](docs/parsers.md)
 
-Basic Parsers: `eof`, `ok`, `fail`, `ser`, `alt`, `many`, `atLeast`, `atMost`, `times`, `timesBetween`, `not`, `peek`, `name`, `desc`, `node`
+Basic Parsers: `eof`, `ok`, `any`, `fail`, `ser`, `alt`, `many`, `atLeast`, `atMost`, `times`, `timesBetween`, `not`, `peek`, `name`, `desc`, `node`
 
 More Parsers: `listOf`, `series`, `memoize`, `isolate`
 
@@ -95,6 +95,8 @@ The basic parsers are the bread and butter of this library. You'll probably use 
 ### [Core and custom parsers](docs/core.md)
 
 Classes: `Parser`
+
+Parser Methods: `parse`, `join`, `chain`, `value`, `map`, `debug`
 
 Functions: `isParser`, `getPossibleParser`
 
