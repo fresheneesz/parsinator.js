@@ -6,7 +6,7 @@ Yet another [parser combinator](http://en.wikipedia.org/wiki/Parser_combinator) 
 * Supports parameterized parsers and recursive parsers.
 * Powerful debug recording and displaying. This can be enormously helpful figuring out why your parser isn't working as you expect.
 
-![parsinator-doofinshmirtz](docs/parsinator.jpg]
+![parsinator-doofinshmirtz](docs/parsinator.jpg)
 
 ## Example
 
