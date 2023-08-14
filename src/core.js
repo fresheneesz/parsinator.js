@@ -81,6 +81,7 @@ const Parser = exports.Parser = proto(function() {
         // treated like a critical failure.
         if(e instanceof InternalError) {
           var result = e.result
+          e = e.result.error
         } else {
           e._parsinatorName = name
           var result = ParseResult(false, context, undefined, ['no error'], e)

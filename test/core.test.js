@@ -325,10 +325,13 @@ module.exports = [
     try {
       x.debug().parse('ignored')
     } catch(e) {
-      return e.result.context.debugRecord
+      return {
+        errorMessage: e.toString(),
+        debugRecord: e.result.context.debugRecord
+      }
     }
   }, result: {
-    name: 'x', startIndex: 0, result: {ok: false, context:{index:0}, error: new Error("Some error")}
+    errorMessage: "Error: Some error", debugRecord: {name: 'x', startIndex: 0, result: {ok: false, context:{index:0}, error: new Error("Some error")}}
   }},
 
   {name: 'debugger: chain exception', run: function(){
