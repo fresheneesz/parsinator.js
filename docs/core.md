@@ -7,7 +7,7 @@
 * `name` - A display name for the parser.
 * `action()` - A function called with no arguments but will receive a `Context` object as its `this`. Should evaluate the `Context` and parse appropriately, returning a `ParseResult`. See below for details on these two classes.
 
-**`parser.parse(input)`**  - Runs the parser `action` on the relevant input and if successful, returns the `ParseResult` returned by the `action`. If unsuccessful, an exception will be thrown that contains a `ParseResult` as its `result` property. Also note that if you're writing a custom parser combinator, you should use `context.parse` below **instead** of running `parser.parse`, for debuggability reasons. 
+**`parser.parse(input)`**  - Runs the parser `action` on the relevant input and returns the `ParseResult` returned by the `action`. If an exception is thrown, it will contain contain a `ParseResult` as its `result` property. Also note that if you're writing a custom parser combinator, you should use `context.parse` below **instead** of running `parser.parse`, for debuggability reasons. 
 
 **`parser.join()`**  - Convenience method to concatenate together a result that consists of a nested array of strings. 
 
