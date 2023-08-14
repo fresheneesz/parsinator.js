@@ -125,9 +125,13 @@ const Parser = exports.Parser = proto(function() {
       }
     }
 
-    const result = prevResult.copy()
-    result.value = resultValues
-    return result
+    if (prevResult.ok) {
+      const result = prevResult.copy()
+      result.value = resultValues
+      return result
+    } else {
+      return prevResult
+    }
   }
   
   this.join = function() {
