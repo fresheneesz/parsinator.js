@@ -84,12 +84,15 @@ const Parser = exports.Parser = proto(function() {
         } else {
           e._parsinatorName = name
           var result = ParseResult(false, context, undefined, ['no error'], e)
+          e.result = result
         }
+        
         context.addDebugResult(result)
+        
         if(isInternal) {
           throw InternalError(result)
         } else {
-          return result
+          throw e
         }
       } else {
         if (!e._parsinatorName) {

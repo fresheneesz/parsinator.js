@@ -322,7 +322,11 @@ module.exports = [
     var x = Parser('x', function() {
       throw new Error("Some error")
     })
-    return x.debug().parse('ignored').context.debugRecord
+    try {
+      x.debug().parse('ignored')
+    } catch(e) {
+      return e.result.context.debugRecord
+    }
   }, result: {
     name: 'x', startIndex: 0, result: {ok: false, context:{index:0}, error: new Error("Some error")}
   }},
@@ -335,7 +339,13 @@ module.exports = [
         throw new Error("Some error")
       })
     })
-    return x.debug().parse('ignored').context.debugRecord
+      
+    try {
+      x.debug().parse('ignored')
+    } catch(e) {
+      return e.result.context.debugRecord
+    }
+    
   }, result: {
     name: 'chain', startIndex: 0, result: {ok: false, context:{index:1}, error: new Error("Some error")}, subRecords: [
       {name: 'x', startIndex: 0, result: {ok: true, context:{index:1}, value: 'x'}},

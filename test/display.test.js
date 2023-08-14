@@ -45,10 +45,14 @@ module.exports = [
     const exceptionParser = ser('a').chain(function() {
       throw new Error('hi')
     })
-    const result = exceptionParser.debug().parse("ab")
-    return [
-      displayResult(result, {colors: false}).split('\n').slice(2, 6).join('\n')
-    ]
+      
+    try {
+      exceptionParser.debug().parse("ab")
+    } catch(e) {
+      return [
+        displayResult(e.result, {colors: false}).split('\n').slice(2, 6).join('\n')
+      ]
+    }
   }, result: [
     "Couldn't continue passed line 1 column 1. \n"+
     ' 1 | ab\n' +
@@ -90,12 +94,15 @@ module.exports = [
     const infiniteParser = timesBetween(0, Infinity, 'x').chain(function() {
       return infiniteParser
     })
-    const result = infiniteParser.debug().parse("a")
-    const debugDisplayLines = displayDebugInfo(result, {colors: false}).split('\n')
 
-    return [
-      debugDisplayLines[0], debugDisplayLines[debugDisplayLines.length-1]
-    ]
+    try {
+      infiniteParser.debug().parse("a")
+    } catch(e) {
+      const debugDisplayLines = displayDebugInfo(e.result, {colors: false}).split('\n')
+      return [
+        debugDisplayLines[0], debugDisplayLines[debugDisplayLines.length-1]
+      ]
+    }
   }, result: [
     'chain: [1:1] failed "a"',
     "Couldn't print more results, because the maxSubrecordDepth of 75 was exceeded."
