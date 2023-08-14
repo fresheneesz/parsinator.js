@@ -152,6 +152,20 @@ const Parser = exports.Parser = proto(function() {
     // reported for the first leg of the chain.
     return Parser(this.name, this.action, this.chainContinuations.concat(continuation))
   }
+  
+  this.isolate = function(stateMapper) {
+    const parser = this
+    return Parser('isolate', function() {
+      const result = this.parse(parser, this.copy())
+      const oldState = result.context._state
+      const newState = new Map(this._state)
+      
+      if (stateMapper) stateMapper(oldState, newState)
+      result.context._state = newState
+      
+      return result
+    })
+  }
 
   this.value = function(valueMapper) {
     const parser = this

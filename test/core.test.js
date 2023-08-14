@@ -185,7 +185,40 @@ module.exports = [
     }, 
     exception: "Argument passed to parse is neither a string nor a Context object."
   },
-
+  
+  // isolate
+  {name: 'Parser.isolate', run: function(){
+    const initState = Parser('parser', function() {
+      this.set('a', 'no')
+      this.set('b', 'no')
+      return this.ok(1, 'A')
+    })
+    const modifyState = Parser('parser', function() {
+      this.set('a', 'yes')
+      this.set('b', 'yes')
+      return this.ok(1, 'B')
+    })
+    const readState = Parser('parser', function() {
+      return this.ok(1, this.get('a')+this.get('b'))
+    })
+      
+    const parser = initState.chain(v => modifyState.isolate(function(oldState, newState) {
+      newState.set('b', oldState.get('b')) 
+    })).chain(v => readState)
+    
+    const parseResult = parser.parse("abc")
+      
+    const results = parseResult.value
+    results.push(parseResult.context.get('a') === 'no')
+    results.push(parseResult.context.get('b') === 'yes')
+      
+    return results
+  }, result: [
+    'A','B','noyes', true, true
+  ]},
+  
+  // Debugger
+  
   {name: 'debugger: basic output', run: function(){
     var parser = Parser('parser', function() {
       return this.ok(2, 'resultValue')

@@ -120,7 +120,7 @@ exports.ser = function(...parsers) {
           const objectDisplay = '{'+Object.keys(labelMap).map((key) => {
             return key+": "+(getPossibleParser(labelMap[key]).name || JSON.stringify(labelMap[key]))
           }).join(', ')+'}'
-          throw new Error("A ser label object contains multiple labels: "+objectDisplay+".")
+          throw new Error("a ser label object contains multiple labels: "+objectDisplay+".")
         }
         found = true
     }

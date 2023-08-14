@@ -134,11 +134,3 @@ exports.memoize = function(parserFunction, options) {
     return keys
   }
 }
-
-exports.isolate = function(parser) {
-  return Parser('isolate', function() {
-    const result = this.parse(parser, this.copy())
-    result.context._state = this._state
-    return result
-  })
-}

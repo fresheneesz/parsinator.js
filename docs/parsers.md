@@ -67,5 +67,3 @@ There are no exported parser functions for string and regex parsers, so just use
 * `parserFunction` - This can either be a function that returns a `Parser`, or a bare `Parser`. 
 * `options` - An object with the following optional properties:
   * `relevantStatekeys` - An array of parser state keys (`Context._state`) that are relevant to the parser. If your language has many state items, this is a way to ensure that only the state items that matter to your parser are considered, which can improve performance by reducing the number of cache misses and therefore utilizing the cache more.
-
-**`isolate(parser)`** - Ensures any `Context` state mutated by `parser` is not propagated outside that parser. 

@@ -132,7 +132,7 @@ module.exports = [
      ser({a: 'a', b: 'b'})
    )(),
    input: "abd",
-   exception: 'A ser label object contains multiple labels: {a: "a", b: "b"}.'
+   exception: 'In \'lazy\', a ser label object contains multiple labels: {a: "a", b: "b"}.'
   },
 
   // alt

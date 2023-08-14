@@ -10,18 +10,6 @@ const wrapper = function(x) {
   return ser('(', x, ')')
 }
 
-const initState = ser('a').value(function(value) {
-  this.set('a', 'no')
-  return value
-})
-const modifyState = ser('b').value(function(value) {
-  this.set('a', 'yes')
-  return value
-})
-const readState = ser('c').value(function(value) {
-  return value += this.get('a')
-})
-
 module.exports = [
 
   //*
@@ -72,11 +60,6 @@ module.exports = [
   }},
   {name: 'memoize function', parser: alt(ser(memoizedString('a'), 'b'), ser(memoizedString('a'), 'c')), input: "ac", result: {
     ok: true, value: ['a', 'c']
-  }},
-
-  // isolate
-  {name: 'isolate', parser: ser(initState, isolate(modifyState), readState), input: "abc", result: {
-    ok: true, value: ['a','b','cno']
   }},
 
   //*/
