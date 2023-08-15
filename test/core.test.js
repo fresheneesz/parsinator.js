@@ -152,6 +152,15 @@ module.exports = [
     ok: true, value: 'abcd'
   }},
 
+  {name: 'join on simple string', run: function() {
+    var parser = Parser('parser', function() {
+      return this.ok(4, "string")
+    }).join()
+    return parser.parse('testString')
+  }, result: {
+    ok: true, value: 'string'
+  }},
+
   {name: 'ok parser state', run: function(){
     const results = []
     var parser = Parser('parser', function() {

@@ -138,6 +138,9 @@ const Parser = exports.Parser = proto(function() {
     return this.value(list => joinInternal(list))
     
     function joinInternal(list) {
+      if (typeof(list) === 'string') {
+        return list 
+      }
       if(!(list instanceof Array)) {
           throw new Error("Used `join` on a parser result that isn't only a nested array of strings: "+JSON.stringify(list))
       } 
