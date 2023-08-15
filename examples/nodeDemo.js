@@ -7,7 +7,7 @@ const {
 
 const parsers = lazyParsers({
   number: function() {
-    return node('number', ser(/[0-9]+/).value(Number)).value(value => {
+    return node(ser(/[0-9]+/).value(Number)).value(value => {
       const infoCache = InputInfoCache(this.input)
       value.startInfo = infoCache.get(value.start)
       value.endInfo = infoCache.get(value.end)

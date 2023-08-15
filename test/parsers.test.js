@@ -234,10 +234,10 @@ module.exports = [
   }},
 
   // node
-  {name: 'node', parser: node('nodeName', 'a'), input: "a", result: {
-    ok: true, value: {name: 'nodeName', value: 'a', start: 0, end: 1}, context:{index:1}
+  {name: 'node', parser: node('a'), input: "a", result: {
+    ok: true, value: {value: 'a', start: 0, end: 1}, context:{index:1}
   }},
-  {name: 'node fail', parser: node('nodeName', 'a'), input: "b", result: {
+  {name: 'node fail', parser: node('a'), input: "b", result: {
     ok: false, expected: new Set(['a']), context:{index:0}
   }},
 

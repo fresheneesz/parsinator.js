@@ -221,7 +221,7 @@ function _timesInternal(
 
 exports.not = function(parser) {
   maybeInvalidParserException('not', parser)
-  return Parser('not', function() {
+  return Parser(`not${parser.name}`, function() {
     const result = this.parse(parser, this)
     if(result.ok) {
       return this.fail(this.index, ['not '+this.input.slice(this.index, result.index)])
@@ -256,14 +256,14 @@ exports.desc = function(name, parser) {
   })
 }
 
-exports.node = function(name, parser) {
-  const thisParserName = 'node('+name+')'
+exports.node = function(parser) {
+  const thisParserName = 'node('+parser.name+')'
   maybeInvalidParserException(thisParserName, parser)
   parser = getPossibleParser(parser)
   return Parser(thisParserName, function() {
     const start = this.index
     const transformedParser = parser.value(function(value) {
-      return {name, value, start, end:this.index}
+      return {value, start, end:this.index}
     })
     return this.parse(transformedParser, this)
   })
