@@ -54,7 +54,12 @@ const Parser = exports.Parser = proto(function() {
     const isChain = this.chainContinuations.length !== 0
     if(isChain) {
       name = "chain"
-      chainContinuations = [() => Parser(this.name, this.action)].concat(chainContinuations)
+      chainContinuations = [() => {
+        const chainedParser = Parser(this.name, this.action)
+        chainedParser.shouldDebug = this.shouldDebug
+        chainedParser.hideFromDebugRecord = this.hideFromDebugRecord
+        return chainedParser
+      }].concat(chainContinuations)
     }
     
     if(context.debug) context.addDebugParseInit(name, context.index, context._state, this.hideFromDebugRecord)
@@ -162,12 +167,15 @@ const Parser = exports.Parser = proto(function() {
   this.chain = function(continuation) {
     // The name of this parser should be the same as the parser chain is being called on, because that will be the name
     // reported for the first leg of the chain.
-    return Parser(this.name, this.action, this.chainContinuations.concat(continuation))
+    const chainedParser = Parser(this.name, this.action, this.chainContinuations.concat(continuation))
+    chainedParser.shouldDebug = this.shouldDebug
+    chainedParser.hideFromDebugRecord = this.hideFromDebugRecord
+    return chainedParser
   }
   
   this.isolate = function(stateMapper) {
     const parser = this
-    return hideFromDebug(Parser(`isolate(${this.name})`, function() {
+    return hideFromDebug(Parser(this.name, function() {
       const result = this.parse(parser, this.copy())
       const oldState = result.context._state
       const newState = new Map(this._state)
@@ -181,7 +189,7 @@ const Parser = exports.Parser = proto(function() {
 
   this.value = function(valueMapper) {
     const parser = this
-    return hideFromDebug(Parser('value('+this.name+')', function() {
+    return hideFromDebug(Parser(this.name, function() {
       const result = this.parse(parser, this)
       if(result.ok) {
         result.value = valueMapper.call(result.context, result.value)
@@ -191,7 +199,7 @@ const Parser = exports.Parser = proto(function() {
   }
 
   this.map = function(mapper) {
-    return hideFromDebug(name('map('+this.name+')', this.value(function(values) {
+    return hideFromDebug(name(this.name, this.value(function(values) {
       const context = this
       return values.map(function() {
         return mapper.apply(context, arguments)
@@ -320,7 +328,9 @@ const Context = proto(function() {
     this.curDebugSection.name = name
     this.curDebugSection.startIndex = startIndex
     this.curDebugSection.startState = new Map(startState)
-    this.curDebugSection.hideFromDebugRecord = hideFromDebugRecord
+    if (hideFromDebugRecord) {
+      this.curDebugSection.hideFromDebugRecord = true
+    }
   }
 
   // Adds the result to the debug record.

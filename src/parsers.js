@@ -242,9 +242,8 @@ exports.peek = function(parser) {
 }
 
 exports.desc = function(name, parser) {
-  const parserName = 'desc('+name+')'
-  maybeInvalidParserException(parserName, parser)
-  return hideFromDebug(Parser(parserName, function() {
+  maybeInvalidParserException('desc('+name+')', parser)
+  return hideFromDebug(Parser(name, function() {
     const result = this.parse(parser, this)
     if(result.ok) {
       return result
@@ -255,10 +254,9 @@ exports.desc = function(name, parser) {
 }
 
 exports.node = function(parser) {
-  const thisParserName = 'node('+parser.name+')'
-  maybeInvalidParserException(thisParserName, parser)
+  maybeInvalidParserException('node('+parser.name+')', parser)
   parser = getPossibleParser(parser)
-  return hideFromDebug(Parser(thisParserName, function() {
+  return hideFromDebug(Parser(parser.name, function() {
     const start = this.index
     const transformedParser = parser.value(function(value) {
       return {value, start, end:this.index}
