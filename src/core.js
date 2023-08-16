@@ -17,6 +17,7 @@ const Parser = exports.Parser = proto(function() {
     if(!(this.action instanceof Function)) throw new Error("No action passed to Parser constructor")
     if(this.chainContinuations === undefined) this.chainContinuations = []
     this.shouldDebug = false
+    this.hideFromDebugRecord = false
   }
 
   this.parse = function(
@@ -48,25 +49,25 @@ const Parser = exports.Parser = proto(function() {
       }
     }
 
+    let name = this.name
     let chainContinuations = this.chainContinuations
     const isChain = this.chainContinuations.length !== 0
     if(isChain) {
-      if(context.debug) context.addDebugParseInit("chain", context.index, context._state)
+      name = "chain"
       chainContinuations = [() => Parser(this.name, this.action)].concat(chainContinuations)
-      return maybeTryCatch(this.name, context, isInternal, () => {
-        const result = runContinuations(context, chainContinuations)
-        // This ends up being the result of the entire chain.
-        if(context.debug) context.addDebugResult(result)
-        return result
-      })
-    } else {
-      if(context.debug) context.addDebugParseInit(this.name, context.index, context._state)
-      return maybeTryCatch(this.name, context, isInternal, () => {
-        const result = this.action.apply(context)
-        if(context.debug) context.addDebugResult(result)
-        return result
-      })
     }
+    
+    if(context.debug) context.addDebugParseInit(name, context.index, context._state, this.hideFromDebugRecord)
+    return maybeTryCatch(this.name, context, isInternal, () => {
+      if(isChain) {
+        var result = runContinuations(context, chainContinuations)
+      } else {
+        var result = this.action.apply(context)
+      }
+      if(context.debug) context.addDebugResult(result)
+      return result
+    })
+    
   }
 
   // Runs an action that should return a ParseResult and catches and propagates errors properly.
@@ -166,7 +167,7 @@ const Parser = exports.Parser = proto(function() {
   
   this.isolate = function(stateMapper) {
     const parser = this
-    return Parser(`isolate(${this.name})`, function() {
+    return hideFromDebug(Parser(`isolate(${this.name})`, function() {
       const result = this.parse(parser, this.copy())
       const oldState = result.context._state
       const newState = new Map(this._state)
@@ -175,27 +176,27 @@ const Parser = exports.Parser = proto(function() {
       result.context._state = newState
       
       return result
-    })
+    }))
   }
 
   this.value = function(valueMapper) {
     const parser = this
-    return Parser('value('+this.name+')', function() {
+    return hideFromDebug(Parser('value('+this.name+')', function() {
       const result = this.parse(parser, this)
       if(result.ok) {
         result.value = valueMapper.call(result.context, result.value)
       }
       return result
-    })
+    }))
   }
 
   this.map = function(mapper) {
-    return name('map('+this.name+')', this.value(function(values) {
+    return hideFromDebug(name('map('+this.name+')', this.value(function(values) {
       const context = this
       return values.map(function() {
         return mapper.apply(context, arguments)
       })
-    }))
+    })))
   }
 
   this.debug = function(shouldDebug) {
@@ -315,10 +316,11 @@ const Context = proto(function() {
   }
 
   // Adds debug info available before parsing has started.
-  this.addDebugParseInit = function(name, startIndex, startState) {
+  this.addDebugParseInit = function(name, startIndex, startState, hideFromDebugRecord) {
     this.curDebugSection.name = name
     this.curDebugSection.startIndex = startIndex
     this.curDebugSection.startState = new Map(startState)
+    this.curDebugSection.hideFromDebugRecord = hideFromDebugRecord
   }
 
   // Adds the result to the debug record.
@@ -336,3 +338,7 @@ const InternalError = exports.InternalError = proto(Error, function() {
   }
 })
 
+const hideFromDebug = exports.hideFromDebug = function(parser) {
+  parser.hideFromDebugRecord = true
+  return parser
+}

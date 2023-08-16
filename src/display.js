@@ -145,53 +145,57 @@ function displayDebugRecord(indent, record, options) {
 
   const outputText = []
   if(record.result) {
-    const context = record.result.context
-    const endIndex = context.index // non-inclusive
-    const matchedChars = (endIndex - record.startIndex)
-    if(matchedChars <= options.maxMatchChars) {
-      var matchedCharsString = JSON.stringify(context.input.slice(record.startIndex, endIndex))
-    } else {
-      var matchedCharsString = matchedChars+' character'+(matchedChars>1?'s':'')
-    }
-
-    const inputInfo = options.inputInfoCache.get(record.startIndex)
-    const lineColumnNumbers = gray("["+inputInfo.line+":"+inputInfo.column+"] ")
-    if(record.result.ok) {
-      var matchedString = lineColumnNumbers+'matched '+matchedCharsString
-    } else {
-      var matchedString = lineColumnNumbers+'failed '+
-                          gray(JSON.stringify(
-                            context.input.slice(record.startIndex, record.startIndex+options.maxMatchChars)))
-    }
-
-    if(indent >= 3) {
-      var intentString = strmult(Math.floor(indent/3), '  |')+strmult(indent%3, ' ')
-    } else {
-      var intentString = strmult(indent, ' ')
-    }
-
-    let stateString = ''
-    if(record.result.ok) {
-      var color = green
-      var endState = record.result.context._state
-      if(endState.size > 0) {
-        stateString = cyan(' '+options.stateDisplay(record.startState, endState))
+    if (!record.hideFromDebugRecord) {
+      const context = record.result.context
+      const endIndex = context.index // non-inclusive
+      const matchedChars = (endIndex - record.startIndex)
+      if(matchedChars <= options.maxMatchChars) {
+        var matchedCharsString = JSON.stringify(context.input.slice(record.startIndex, endIndex))
+      } else {
+        var matchedCharsString = matchedChars+' character'+(matchedChars>1?'s':'')
       }
-    } else {
-      var color = red
-      if(record.startState.size > 0) {
-        stateString = red(' '+options.stateDisplay(record.startState))
+  
+      const inputInfo = options.inputInfoCache.get(record.startIndex)
+      const lineColumnNumbers = gray("["+inputInfo.line+":"+inputInfo.column+"] ")
+      if(record.result.ok) {
+        var matchedString = lineColumnNumbers+'matched '+matchedCharsString
+      } else {
+        var matchedString = lineColumnNumbers+'failed '+
+                            gray(JSON.stringify(
+                              context.input.slice(record.startIndex, record.startIndex+options.maxMatchChars)))
       }
+  
+      if(indent >= 3) {
+        var intentString = strmult(Math.floor(indent/3), '  |')+strmult(indent%3, ' ')
+      } else {
+        var intentString = strmult(indent, ' ')
+      }
+  
+      let stateString = ''
+      if(record.result.ok) {
+        var color = green
+        var endState = record.result.context._state
+        if(endState.size > 0) {
+          stateString = cyan(' '+options.stateDisplay(record.startState, endState))
+        }
+      } else {
+        var color = red
+        if(record.startState.size > 0) {
+          stateString = red(' '+options.stateDisplay(record.startState))
+        }
+      }
+  
+      outputText.push(gray(intentString)+color(record.name+": "+matchedString+stateString))
     }
-
-    outputText.push(gray(intentString)+color(record.name+": "+matchedString+stateString))
+    
     if(record.subRecords) for(let n=0; n<record.subRecords.length; n++) {
       const subRecord = record.subRecords[n]
       // This try is here to catch max callstack exceeded errors, which are likely to happen when a corresponding max
       // callstack error happened in a parser.
       try {
-        if(indent+1 < options.maxSubrecordDepth) {
-          outputText.push(displayDebugRecord(indent+1, subRecord, options))
+        const nextIndent = record.hideFromDebugRecord ? indent : indent + 1
+        if(nextIndent < options.maxSubrecordDepth) {
+          outputText.push(displayDebugRecord(nextIndent, subRecord, options))
         } else {
           outputText.push(color("Couldn't print more results, because the maxSubrecordDepth of "+options.maxSubrecordDepth+" was exceeded."))
           break

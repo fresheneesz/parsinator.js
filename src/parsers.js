@@ -1,6 +1,6 @@
 // See ../docs/parsers.md for documentation.
 
-const {Parser, InternalError} = require("./core")
+const {Parser, InternalError, hideFromDebug} = require("./core")
 const {isParser, getPossibleParser, maybeInvalidParserException} = require('./basicParsers')
 
 exports.any = function() {
@@ -244,25 +244,25 @@ exports.peek = function(parser) {
 exports.desc = function(name, parser) {
   const parserName = 'desc('+name+')'
   maybeInvalidParserException(parserName, parser)
-  return Parser(parserName, function() {
+  return hideFromDebug(Parser(parserName, function() {
     const result = this.parse(parser, this)
     if(result.ok) {
       return result
     } else {
       return this.fail(this.index, [name])
     }
-  })
+  }))
 }
 
 exports.node = function(parser) {
   const thisParserName = 'node('+parser.name+')'
   maybeInvalidParserException(thisParserName, parser)
   parser = getPossibleParser(parser)
-  return Parser(thisParserName, function() {
+  return hideFromDebug(Parser(thisParserName, function() {
     const start = this.index
     const transformedParser = parser.value(function(value) {
       return {value, start, end:this.index}
     })
     return this.parse(transformedParser, this)
-  })
+  }))
 }
