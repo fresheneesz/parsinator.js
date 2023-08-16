@@ -142,7 +142,7 @@ const Parser = exports.Parser = proto(function() {
         return list 
       }
       if(!(list instanceof Array)) {
-          throw new Error("Used `join` on a parser result that isn't only a nested array of strings: "+JSON.stringify(list))
+          throw new Error("used `join` on a parser result that isn't only a nested array of strings: "+JSON.stringify(list))
       } 
       
       var s = []
@@ -166,7 +166,7 @@ const Parser = exports.Parser = proto(function() {
   
   this.isolate = function(stateMapper) {
     const parser = this
-    return Parser('isolate', function() {
+    return Parser(`isolate(${this})`, function() {
       const result = this.parse(parser, this.copy())
       const oldState = result.context._state
       const newState = new Map(this._state)
@@ -183,10 +183,9 @@ const Parser = exports.Parser = proto(function() {
     return Parser('value('+this.name+')', function() {
       const result = this.parse(parser, this)
       if(result.ok) {
-        return result.context.ok(result.context.index, valueMapper.call(result.context, result.value))
-      } else {
-        return result
+        result.value = valueMapper.call(result.context, result.value)
       }
+      return result
     })
   }
 

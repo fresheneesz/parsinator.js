@@ -220,8 +220,9 @@ function _timesInternal(
 }
 
 exports.not = function(parser) {
+  parser = getPossibleParser(parser)
   maybeInvalidParserException('not', parser)
-  return Parser(`not${parser.name}`, function() {
+  return Parser(`not ${parser.name}`, function() {
     const result = this.parse(parser, this)
     if(result.ok) {
       return this.fail(this.index, ['not '+this.input.slice(this.index, result.index)])

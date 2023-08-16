@@ -1,5 +1,5 @@
 const {
-  eof, ok, fail, alt, ser, not, timesBetween
+  eof, ok, fail, many, any, alt, ser, not, timesBetween
 } = require("../src/parsers")
 var {lazy} = require("../src/lazy")
 var {InputInfoCache, displayResult, displayDebugInfo} = require("../src/display")
@@ -88,6 +88,21 @@ module.exports = [
     'alt("a", "b"): [1:1] matched "b"\n' +
     ' "a": [1:1] failed "bb"\n' +
     ' "b": [1:1] matched "b"'
+  ]},
+  
+  {name: 'displayDebugInfo (line bug)', run: function(){
+    const simpleParser = many(any)
+    const result = simpleParser.debug().parse("\n}]")
+
+    return [
+      displayDebugInfo(result, {colors: false})
+    ]
+  }, result: [
+    'many(any): [1:1] matched "\\n}]"\n' +
+    ' any: [1:1] matched "\\n"\n' +
+    ' any: [2:1] matched "}"\n' +
+    ' any: [2:2] matched "]"\n' +
+    ' any: [2:3] failed ""'
   ]},
 
   {name: 'displayDebugInfo infinite recursion', run: function(){

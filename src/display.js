@@ -96,6 +96,9 @@ function displayError(result, options) {
     options = Object.assign({lineNumberPadding: 0}, options)
 
     const inputDisplayStartIndex = options.inputInfoCache.getLineIndex(startLine)
+    if (inputDisplayStartIndex === undefined) {
+      return '' // No lines.
+    }
     let indexAfterEnd = options.inputInfoCache.getLineIndex(endLine+1)
     if(!indexAfterEnd) {
       indexAfterEnd = result.context.input.length
@@ -111,7 +114,7 @@ function displayError(result, options) {
   }
 
   // Inserts lines numbers into the list of `lines`.
-  // zeroLineNumber - the first line number in `lines.
+  // zeroLineNumber - the first line number in `lines1.
   // charsInLineNumber - The number of characters in the greatest line number (used to ensure proper padding).
   function insertLineNumbers(lines, zeroLineNumber, charsInLineNumber) {
     for(var n=0; n<lines.length; n++) {
@@ -270,78 +273,39 @@ function strmult(multiplier, str) {
 const InputInfoCache = exports.InputInfoCache = proto(function LineCache() {
   this.init = function(input) {
     this.input = input
-    // A list containing the last index of each 0-based.
-    this.cache = []
+    // A map of 1-based line to the first character index in that line.
+    this.lineCache = {1: 0}
+    
+    let line = 1
+    for (let index=0; index<input.length; index++) {
+      const char = input[index]
+      if (char === '\n') {
+        line++
+        this.lineCache[line] = index+1
+      }
+    }
+    
+    this.lines = line
   }
-
+  
+  // Returns the start index at line.
+  this.getLineIndex = function(line) {
+    return this.lineCache[line]
+  }
+  
   this.get = function(index) {
     if(index < 0 || this.input.length < index) {
       throw new Error("Asking for info about an index not contained in the target string: "+index+'.')
     }
-    const oneIndexBeyond = this.input.length === index
-    const columnAddition = oneIndexBeyond? 1 : 0
-    // This is a special case because the input doesn't actually contain this index.
-    if(oneIndexBeyond) {
-      index--
-    }
-
-    let lastLineEndIndex = -1
-    for(let zeroBasedLine=0; zeroBasedLine<this.cache.length; zeroBasedLine++) {
-      const lineInfo = getLineInfo(index, this.cache, zeroBasedLine, lastLineEndIndex, columnAddition)
-      if(lineInfo) {
-        return lineInfo
-      }
-      lastLineEndIndex = this.cache[zeroBasedLine]
-    }
-
-    const lineInfo = this.searchUntil((zeroBasedLineNumber, lastLineEndIndex) => {
-      return getLineInfo(index, this.cache, zeroBasedLineNumber, lastLineEndIndex, columnAddition)
-    })
-    if(lineInfo) {
-      return lineInfo
-    } else {
-      throw new Error("Couldn't find line info.")
-    }
-
-    // Gets line information for the passed index.
-    function getLineInfo(index, cache, zeroBasedLineNumber, lastLineEndIndex, columnAddition) {
-      if(index < cache[zeroBasedLineNumber]) {
-        return {line: zeroBasedLineNumber+1, column: index-lastLineEndIndex+columnAddition}
-      } else if(index === cache[zeroBasedLineNumber]) {
-        return {line: zeroBasedLineNumber+1, column: index-lastLineEndIndex+columnAddition}
+    
+    let lastLine
+    for (let line=1; line<=this.lines; line++) {
+      lastLine = line
+      const startIndex = this.lineCache[line]
+      if (startIndex > index) {
+        return {line: line-1, column: 1 + index - this.lineCache[line-1]} 
       }
     }
-  }
-
-  // Searches the input until check returns something truthy.
-  // startIndex - The line to start searching from.
-  // check(lineNumber, lastLineEndIndex)
-  this.searchUntil = function(check) {
-    let lastLineEndIndex = this.cache[this.cache.length-1] || -1
-    const startIndex = lastLineEndIndex+1
-    for(let n=startIndex; n<this.input.length; n++) {
-      if(this.input[n] === '\n' || n == this.input.length-1) {
-        this.cache.push(n)
-        const checkResult = check(this.cache.length-1, lastLineEndIndex)
-        if(checkResult) {
-          return checkResult
-        }
-        lastLineEndIndex = n
-      }
-    }
-  }
-
-  this.getLineIndex = function(line) {
-    if(line === 1) return 0
-    line = line-1 // 0 based is easier internally.
-    if(this.cache.length < line) {
-      this.searchUntil((lineNumber) => {
-        return lineNumber === line
-      })
-    }
-    if(line <= this.cache.length) {
-      // The start of the line is the end of the previous line plus 1.
-      return this.cache[line-1]+1
-    }
+    return {line: lastLine, column: 1 + index - this.lineCache[lastLine]} 
   }
 })
