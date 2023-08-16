@@ -30,6 +30,7 @@ const x = lazy('x', function() {
 module.exports = [
 
 
+  
   //*
 
   // eof
@@ -155,6 +156,9 @@ module.exports = [
   }},
   {name: 'times no match', parser: times(2, 'a'), input: "ab", result: {
     ok: false, expected: new Set(['a'])
+  }},
+  {name: 'times backtrack bug', parser: ser(atLeast(1, ser('a', 'b')), eof), input: "aba", result: {
+    ok: false, expected: new Set(['EOF'])
   }},
 
   // atLeast

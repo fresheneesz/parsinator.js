@@ -166,7 +166,7 @@ const Parser = exports.Parser = proto(function() {
   
   this.isolate = function(stateMapper) {
     const parser = this
-    return Parser(`isolate(${this})`, function() {
+    return Parser(`isolate(${this.name})`, function() {
       const result = this.parse(parser, this.copy())
       const oldState = result.context._state
       const newState = new Map(this._state)

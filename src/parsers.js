@@ -197,32 +197,29 @@ function _timesInternal(
 
   return Parser(name, function() {
     const results = []
-    let curContext = this, lastResult
+    let curContext = this
     for(let n=0; n<maxParses; n++) {
       const result = this.parse(parser, curContext)
       if(result.ok) {
         results.push(result.value)
-        lastResult = result
         curContext = result.context
       } else {
         if(results.length < minParses) {
-          let indexContext = lastResult? lastResult.context : curContext
           // Improve this error message (expectation?)
-          return this.fail(indexContext.index, result.expected)
+          return this.fail(curContext.index, result.expected)
         } else {
-          lastResult = result
           break
         }
       }
     }
-    return lastResult.context.ok(lastResult.context.index, results)
+    return curContext.ok(curContext.index, results)
   })
 }
 
 exports.not = function(parser) {
   parser = getPossibleParser(parser)
   maybeInvalidParserException('not', parser)
-  return Parser(`not ${parser.name}`, function() {
+  return Parser(`not(${parser.name})`, function() {
     const result = this.parse(parser, this)
     if(result.ok) {
       return this.fail(this.index, ['not '+this.input.slice(this.index, result.index)])
