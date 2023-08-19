@@ -4,6 +4,8 @@ const {isParser, getPossibleParser} = require('../src/basicParsers')
 
 module.exports = [
 
+  
+  
 
   //*
   {name: 'ok parser', run: function(){
@@ -81,7 +83,7 @@ module.exports = [
     results.push(parser.parse('testString'))
     return results
   }, result: [
-    true, true, true, true, {ok: true, value: ['a', 'b'], context: {index: 5}}
+    true, true, true, true, {ok: true, value: 'b', context: {index: 5}}
   ]},
 
   {name: 'result', run: function(){
@@ -211,9 +213,15 @@ module.exports = [
       return this.ok(1, this.get('a')+this.get('b'))
     })
       
-    const parser = initState.chain(v => modifyState.isolate(function(oldState, newState) {
-      newState.set('b', oldState.get('b')) 
-    })).chain(v => readState)
+    const parser = initState.chain(v => 
+      modifyState.isolate(function(oldState, newState) {
+        newState.set('b', oldState.get('b')) 
+      }).value(
+        v2 => [v].concat([v2]))
+    ).chain(v => 
+      readState.value(v2 => 
+        v.concat([v2]))
+    )
     
     const parseResult = parser.parse("abc")
       
@@ -317,7 +325,7 @@ module.exports = [
     return x.debug().parse('ignored').context.debugRecord
   }, result: {
     name: 'chain', startIndex: 0, startState:new Map([]),
-    result: {ok: true, context:{index:3, _state:new Map([['a',5]])}, value: ['x', 'xy', 'xyz']}, subRecords: [
+    result: {ok: true, context:{index:3, _state:new Map([['a',5]])}, value: 'xyz'}, subRecords: [
       {name: 'x', startIndex: 0, startState:new Map([]),
        result: {ok: true, context:{index:1, _state:new Map([['a',1]])}, value: 'x'}},
       {name: 'y', startIndex: 1, startState:new Map([['a',2]]),

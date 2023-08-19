@@ -11,7 +11,7 @@
 
 **`parser.join()`**  - Convenience method to concatenate together a result that consists of a nested array of strings. 
 
-**`parser.chain(continuation)`** - Allows access to the value returned by the parser this is called on and returns a new parser to continue parsing with. If the parser returns an ok `ParseResult`, calls `continuation` to get the next parser to continue parsing from. See [docs/chainDemo.md](../docs/chainDemo.md) for an example.
+**`parser.chain(continuation)`** - Allows access to the value returned by the parser this is called on and returns a new parser to continue parsing with. If the parser returns an ok `ParseResult`, calls `continuation` to get the next parser to continue parsing from. See [docs/chainDemo.md](../docs/chainDemo.md) for an example. The value of the resulting parser is the value of the parser returned from `continuation`, so if you want to pass on all or part of the value passed to `continuation`, you need to add it manually (eg by using `Parser.value`.
 
 * `continuation(value)` - Should return a `Parser`. The passed `value` is the value of the previously run parser and gets the current `Context` as `this`.
 
@@ -90,7 +90,7 @@ For convenience, parsinator.js allows your code to pass argumentless functions t
 ```javascript
 const parsers = lazyParsers({
   integer: function() {
-    return ser(/[0-9]+/).chain(value => ok(Number(value)))
+    return ser(/[0-9]+/).value(v => Number(v))
   },
   version: function() {
     return series({sepBy: '.'}, integer(), integer, integer())

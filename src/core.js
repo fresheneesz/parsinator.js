@@ -117,27 +117,21 @@ const Parser = exports.Parser = proto(function() {
   // As far as the debug record is concerned, this records all chained continuations as subRecord siblings
   // (under the 'chain' record set up in the `parse` code that calls this.
   function runContinuations(context, chainContinuations) {
-    const resultValues = []
     let prevResult = {ok:true, context: context} // Set up fake previous result.
     for(let n=0; n<chainContinuations.length; n++) {
       if(prevResult.ok) {
         const continuation = chainContinuations[n]
-        const parser = continuation.call(prevResult.context, prevResult.value)
-        if(!(parser instanceof Parser)) throw new Error("Function passed to `chain` did not return a parser. The function is: "+continuation.toString())
+        const parser = getPossibleParser(continuation.call(prevResult.context, prevResult.value))
+        if(!(parser instanceof Parser)) {
+          throw new Error("Function passed to `chain` did not return a parser. The function is: "+continuation.toString())
+        }
         prevResult = context.parse(parser, prevResult.context)
-        resultValues.push(prevResult.value)
       } else {
         break
       }
     }
 
-    if (prevResult.ok) {
-      const result = prevResult.copy()
-      result.value = resultValues
-      return result
-    } else {
-      return prevResult
-    }
+    return prevResult
   }
   
   this.join = function() {

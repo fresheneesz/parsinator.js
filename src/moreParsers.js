@@ -43,18 +43,18 @@ exports.series = function(options, ...parsers) {
   if(options.ignoreSep === undefined) options.ignoreSep = true
   parsers = parsers.map(parser => getPossibleParser(parser))
 
-  let lastParser = parsers[0]
+  let lastParser = parsers[0].value(v => [v]) // Every other value in the chain will be a list, so this should be too.
   if(options.wrap) lastParser = options.wrap(lastParser)
 
-  if(parsers.length === 1) return getPossibleParser(lastParser).value(value => [value])
+  if(parsers.length === 1) return getPossibleParser(lastParser)
   for(let n=1; n<parsers.length; n++) {
     let parser = parsers[n]
-    lastParser = lastParser.chain(function() {
+    lastParser = lastParser.chain(function(v) {
       if(options.wrap) parser = options.wrap(parser)
       if(options.sepBy) {
-        return ser(options.sepBy, parser).value(values => options.ignoreSep ? [values[1]]: values)
+        return ser(options.sepBy, parser).value(values => options.ignoreSep ? [values[1]]: values).value(v2 => v.concat(v2))
       } else {
-        return parser
+        return parser.value(v2 => v.concat(v2))
       }
     })
   }

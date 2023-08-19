@@ -6,7 +6,7 @@ const {
 
 const parsers = lazyParsers({
   integer: function() {
-    return ser(/[0-9]+/).chain(value => ok(Number(value)))
+    return ser(/[0-9]+/).value(v => Number(v))
   },
   version: function() {
     return ser({major: integer()}, '.', {minor: integer()}, '.', {patch: integer()})
