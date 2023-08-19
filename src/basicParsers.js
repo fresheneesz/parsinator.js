@@ -38,10 +38,14 @@ function regex(regexp) {
 }
 
 function isParser(parser) {
+  return isNonFunctionParser(parser) ||
+         parser instanceof Function && parser() instanceof core.Parser
+}
+
+function isNonFunctionParser(parser) {
   return parser instanceof core.Parser ||
          typeof(parser) === 'string' ||
-         parser instanceof RegExp ||
-         parser instanceof Function && parser() instanceof core.Parser
+         parser instanceof RegExp
 }
 
 function getPossibleParser(parser) {
@@ -74,4 +78,4 @@ function maybeInvalidParserException(name, parser) {
   }
 }
 
-module.exports = {isParser, getPossibleParser, name, maybeInvalidParserException}
+module.exports = {isParser, isNonFunctionParser, getPossibleParser, name, maybeInvalidParserException}

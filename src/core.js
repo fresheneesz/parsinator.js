@@ -3,7 +3,7 @@
 // debug information gathering. The exports in here are documented in docs/core.md.
 
 const proto = require("proto")
-const {getPossibleParser, name} = require('./basicParsers')
+const {isNonFunctionParser, getPossibleParser, name} = require('./basicParsers')
 
 const internal = {} // Indicates internal to prevent misuse.
 
@@ -121,7 +121,12 @@ const Parser = exports.Parser = proto(function() {
     for(let n=0; n<chainContinuations.length; n++) {
       if(prevResult.ok) {
         const continuation = chainContinuations[n]
-        const parser = getPossibleParser(continuation.call(prevResult.context, prevResult.value))
+        if (isNonFunctionParser(continuation)) {
+          var parser = getPossibleParser(continuation)
+        } else {
+          var parser = getPossibleParser(continuation.call(prevResult.context, prevResult.value))
+        }
+        
         if(!(parser instanceof Parser)) {
           throw new Error("Function passed to `chain` did not return a parser. The function is: "+continuation.toString())
         }

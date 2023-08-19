@@ -86,6 +86,16 @@ module.exports = [
     true, true, true, true, {ok: true, value: 'b', context: {index: 5}}
   ]},
 
+  {name: 'chain can be passed a striaght parser', run: function(){
+    var parser = Parser('parser', function() {
+      return this.ok(1, 'a')
+    }).chain(Parser('parser2', function() {
+      return this.ok(2, 'b')
+    })).chain('c')
+      
+    return parser.parse('ABc').value
+  }, result: 'c'},
+
   {name: 'result', run: function(){
     var parser = Parser('parser', function() {
       this.set('x', 3)
