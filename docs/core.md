@@ -13,7 +13,7 @@
 
 **`parser.chain(continuation)`** - Allows access to the value returned by the parser this is called on and returns a new parser to continue parsing with. If the parser returns an ok `ParseResult`, calls `continuation` to get the next parser to continue parsing from. See [docs/chainDemo.md](../docs/chainDemo.md) for an example. The value of the resulting parser is the value of the parser returned from `continuation`, so if you want to pass on all or part of the value passed to `continuation`, you need to add it manually (eg by using `Parser.value`.
 
-* `continuation(value)` - Should return a `Parser`. The passed `value` is the value of the previously run parser and gets the current `Context` as `this`.
+* `continuation(value)` - Should return a `Parser`. The passed `value` is the value of the previously run parser and gets the current `Context` as `this`. A straight parser (including strings and regex objects) can also be passed to chain in place of a `continuation` function.
 
 **`parser.value(valueMapper)`** - Transforms the result into a new result.
 
