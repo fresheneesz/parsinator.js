@@ -189,16 +189,26 @@ const Parser = exports.Parser = proto(function() {
   this.isolateFromDebugRecord = function() {
     const parser = this
     return hideFromDebug(Parser(this.name, function() {
+      const isolateFromDebugRecord = this.isolateFromDebugRecord
       this.isolateFromDebugRecord = true
-      return this.parse(parser, this)
+      return this.parse(parser.value(function() {
+        if (!isolateFromDebugRecord) {
+          delete this.isolateFromDebugRecord 
+        }
+      }), this)
     }))
   }
   
   this.deisolateFromDebugRecord = function() {
     const parser = this
     return hideFromDebug(Parser(this.name, function() {
-      delete this.isolateFromDebugRecord
-      return this.parse(parser, this)
+      const isolateFromDebugRecord = this.isolateFromDebugRecord
+      this.isolateFromDebugRecord = false
+      return this.parse(parser.value(function() {
+        if (isolateFromDebugRecord) {
+          this.isolateFromDebugRecord = true 
+        }
+      }), this)
     }))
   }
   

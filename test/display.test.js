@@ -9,6 +9,8 @@ const {name} = require('../src/basicParsers')
 
 module.exports = [
 
+  
+  
 
   //*
   {name: 'displayResult ok', run: function(){
@@ -63,14 +65,14 @@ module.exports = [
   ]},
 
   {name: 'displayResult multiple lines', run: function(){
-    const simpleParser = ser('a\na\naaa', 'bb\nbbb\nb')
+    const simpleParser = ser('a\na\naaa', 'bb\nbbbbbbbbbbbbbbbbbb\nb')
     const result = simpleParser.debug().parse("a\na\naaaxx\nxxx\nxxxxxx")
     return displayResult(result, {colors:false}).split('\n')
   }, result: [
-   'ser("a\\na\\na...: [1:1] failed "a\\na\\naaaxx\\nxxx\\nxxxxxx"',
+   'ser("a\\na\\naaa", "bb\\nbbbbb...: [1:1] failed "a\\na\\naaaxx\\nxxx\\nxxxxxx"',
    ' "a\\na\\naaa": [1:1] matched "a\\na\\naaa"',
-   ' "bb\\nbbb\\nb": [3:4] failed "xx\\nxxx\\nxxxxxx"',
-   `Couldn't continue passed line 3 column 4. Expected: "bb\\nbbb\\nb".`,
+   ' "bb\\nbbbbbbbbbbbbbbbbbb\\nb": [3:4] failed "xx\\nxxx\\nxxxxxx"',
+   `Couldn't continue passed line 3 column 4. Expected: "bb\\nbbbbbbbbbbbbbbbbbb\\nb".`,
    ' 1 | a',
    ' 2 | a',
    ' 3 | aaaxx',
@@ -143,7 +145,7 @@ module.exports = [
       displayDebugInfo(result, {colors: false})
     ]
   }, result: [
-    'many(alt(ser...: [1:1] matched ""\n' +
+    'many(alt(ser("a", "b"), "c")): [1:1] matched ""\n' +
     ' ser("a", "b"): [1:1] failed "\\n}]"\n' +
     '  "a": [1:1] failed "\\n}]"' 
   ]},
@@ -156,7 +158,19 @@ module.exports = [
       displayDebugInfo(result, {colors: false})
     ]
   }, result: [
-    'many(alt(ser...: [1:1] matched ""'
+    'many(alt(ser("a", "b"), "c")): [1:1] matched ""'
+  ]},
+  
+  {name: 'displayDebugInfo isolateFromDebugRecord continuation bug', run: function(){
+    const simpleParser = ser(alt('a', 'b').isolateFromDebugRecord(), 'c')
+    const result = simpleParser.debug().parse("abc")
+
+    return [
+      displayDebugInfo(result, {colors: false})
+    ]
+  }, result: [
+    'ser(alt("a", "b"), "c"): [1:1] failed "abc"\n'+
+    ' "c": [1:2] failed "bc"'
   ]},
 
   {name: 'displayDebugInfo infinite recursion', run: function(){
