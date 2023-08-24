@@ -9,14 +9,16 @@ exports.displayResult = function(result, options) {
   options = Object.assign({
     colors: true, // To pass to displayDebugInfo.
     indicatorColor: colors.red,
-    inputInfoCache: InputInfoCache(result.context.input), displayDebug: true,
+    inputInfoCache: result.context.inputInfoCache, displayDebug: true,
     /*stateDisplay: undefined*/ // To pass to displayDebugInfo.
   }, options)
   options.indicatorColor = options.colors? options.indicatorColor : text => text
 
+  options.inputInfoCache.initialize()
+  
   let display = ''
   if(options.displayDebug && result.context.debugRecord !== undefined) {
-    const optionsToPass = {colors:options.colors}
+    const optionsToPass = {colors:options.colors, inputInfoCache: options.inputInfoCache}
     if(options.stateDisplay) optionsToPass.stateDisplay = options.stateDisplay
     display = displayDebugInfo(result, optionsToPass)+'\n'
   }
@@ -131,10 +133,12 @@ const displayDebugInfo = exports.displayDebugInfo = function(result, options) {
 function displayDebugRecord(indent, record, options) {
   options = Object.assign({
     colors: true, maxMatchChars: 30, maxSubrecordDepth: 75,
-    inputInfoCache: InputInfoCache(record.result.context.input),
+    inputInfoCache: record.result.context.inputInfoCache,
     stateDisplay: stateDisplay
   }, options)
-
+  
+  options.inputInfoCache.initialize()
+  
   let green = colors.green
   let red = colors.red
   let gray = colors.gray
@@ -185,7 +189,7 @@ function displayDebugRecord(indent, record, options) {
         }
       }
   
-      outputText.push(gray(intentString)+color(record.name+": "+matchedString+stateString))
+      outputText.push(gray(intentString)+color(limitNameLength(15, record.name)+": "+matchedString+stateString))
     }
     
     if(record.subRecords) for(let n=0; n<record.subRecords.length; n++) {
@@ -274,42 +278,10 @@ function strmult(multiplier, str) {
 }
 
 
-const InputInfoCache = exports.InputInfoCache = proto(function LineCache() {
-  this.init = function(input) {
-    this.input = input
-    // A map of 1-based line to the first character index in that line.
-    this.lineCache = {1: 0}
-    
-    let line = 1
-    for (let index=0; index<input.length; index++) {
-      const char = input[index]
-      if (char === '\n') {
-        line++
-        this.lineCache[line] = index+1
-      }
-    }
-    
-    this.lines = line
+function limitNameLength(limit, name) {
+  if(name.length <= limit) {
+    return name
+  } else {
+    return name.slice(0, limit-3)+'...'
   }
-  
-  // Returns the start index at line.
-  this.getLineIndex = function(line) {
-    return this.lineCache[line]
-  }
-  
-  this.get = function(index) {
-    if(index < 0 || this.input.length < index) {
-      throw new Error("Asking for info about an index not contained in the target string: "+index+'.')
-    }
-    
-    let lastLine
-    for (let line=1; line<=this.lines; line++) {
-      lastLine = line
-      const startIndex = this.lineCache[line]
-      if (startIndex > index) {
-        return {line: line-1, column: 1 + index - this.lineCache[line-1]} 
-      }
-    }
-    return {line: lastLine, column: 1 + index - this.lineCache[lastLine]} 
-  }
-})
+}

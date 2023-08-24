@@ -1,8 +1,10 @@
+var {InputInfoCache} = require("../src/core")
 const {
   eof, ok, fail, many, any, alt, ser, not, timesBetween
 } = require("../src/parsers")
 var {lazy} = require("../src/lazy")
-var {InputInfoCache, displayResult, displayDebugInfo} = require("../src/display")
+var {displayResult, displayDebugInfo} = require("../src/display")
+const {name} = require('../src/basicParsers')
 
 
 module.exports = [
@@ -11,7 +13,7 @@ module.exports = [
   //*
   {name: 'displayResult ok', run: function(){
     return [
-      displayResult({ok:true, context:{input:"hi", index:2}, value: "yes"}, {colors: false})
+      displayResult({ok:true, context:{input:"hi", index:2, inputInfoCache: InputInfoCache("hi")}, value: "yes"}, {colors: false})
     ]
   }, result: [
     'Parsed successfully through line 1 column 2. Result:\n"yes"',
@@ -65,7 +67,7 @@ module.exports = [
     const result = simpleParser.debug().parse("a\na\naaaxx\nxxx\nxxxxxx")
     return displayResult(result, {colors:false}).split('\n')
   }, result: [
-   'ser("a\\na\\naaa", "bb\\nbbb\\nb"): [1:1] failed "a\\na\\naaaxx\\nxxx\\nxxxxxx"',
+   'ser("a\\na\\na...: [1:1] failed "a\\na\\naaaxx\\nxxx\\nxxxxxx"',
    ' "a\\na\\naaa": [1:1] matched "a\\na\\naaa"',
    ' "bb\\nbbb\\nb": [3:4] failed "xx\\nxxx\\nxxxxxx"',
    `Couldn't continue passed line 3 column 4. Expected: "bb\\nbbb\\nb".`,
@@ -89,6 +91,34 @@ module.exports = [
     ' "a": [1:1] failed "bb"\n' +
     ' "b": [1:1] matched "b"'
   ]},
+
+  {name: 'displayDebugInfo name', run: function(){
+    const simpleParser = name("alternateName", alt('a', 'b'))
+    const result = simpleParser.debug().parse("bb")
+
+    return [
+      displayDebugInfo(result, {colors: false})
+    ]
+  }, result: [
+    'alternateName: [1:1] matched "b"\n' +
+    ' "a": [1:1] failed "bb"\n' +
+    ' "b": [1:1] matched "b"'
+  ]},
+
+  {name: 'displayDebugInfo lazy name', run: function(){
+    const lazyParser = lazy(function() {
+      return name("alternateName", alt('a', 'b'))
+    })
+    const result = lazyParser().debug().parse("bb")
+
+    return [
+      displayDebugInfo(result, {colors: false})
+    ]
+  }, result: [
+    'alternateName: [1:1] matched "b"\n' +
+    ' "a": [1:1] failed "bb"\n' +
+    ' "b": [1:1] matched "b"'
+  ]},
   
   {name: 'displayDebugInfo (line bug)', run: function(){
     const simpleParser = many(any)
@@ -103,6 +133,19 @@ module.exports = [
     ' any: [2:1] matched "}"\n' +
     ' any: [2:2] matched "]"\n' +
     ' any: [2:3] failed ""'
+  ]},
+  
+  {name: 'displayDebugInfo isolateFromDebugRecord', run: function(){
+    const simpleParser = many(ser(alt(ser('a', 'b').deisolateFromDebugRecord(), 'c')).isolateFromDebugRecord())
+    const result = simpleParser.debug().parse("\n}]")
+
+    return [
+      displayDebugInfo(result, {colors: false})
+    ]
+  }, result: [
+    'many(alt(ser...: [1:1] matched ""\n' +
+    ' ser("a", "b"): [1:1] failed "\\n}]"\n' +
+    '  "a": [1:1] failed "\\n}]"\n' 
   ]},
 
   {name: 'displayDebugInfo infinite recursion', run: function(){
@@ -122,59 +165,6 @@ module.exports = [
     'chain: [1:1] failed "a"',
     "Couldn't print more results, because the maxSubrecordDepth of 75 was exceeded."
   ]},
-
-  // InputInfoCache
-
-  {name: 'InputInfoCache', run: function(){
-    const cache = InputInfoCache("hi\nho")
-    return [
-      cache.get(0),
-      cache.get(1),
-      cache.get(2),
-      cache.get(3),
-      cache.get(4)
-    ]
-  }, result: [
-    {line: 1, column: 1},
-    {line: 1, column: 2},
-    {line: 1, column: 3},
-    {line: 2, column: 1},
-    {line: 2, column: 2}
-  ]},
-
-  {name: 'getLineIndex', run: function(){
-    const cache = InputInfoCache("(\n\n\n\n\n\n\n\n1+\n(2+\n3x))\n+4")
-    return [
-      cache.getLineIndex(1),
-      cache.getLineIndex(12)
-    ]
-  }, result: [
-    0,
-    21
-  ]},
-
-  {name: 'InputInfoCache - previous column number bug', run: function(){
-    const cache = InputInfoCache("(1+\n(2+\n3x))\n+4")
-    return [
-      cache.get(9)
-    ]
-  }, result: [
-    {line: 3, column: 2}
-  ]},
-
-  {name: 'InputInfoCache allow asking about 1 index passed the input', run: function(){
-    const cache = InputInfoCache("hi")
-    return cache.get(2)
-  }, result:
-    {line: 1, column: 3}
-  },
-
-  {name: 'InputInfoCache invalid index', run: function(){
-    const cache = InputInfoCache("hi")
-    cache.get(4)
-  }, exception:
-    "Asking for info about an index not contained in the target string: 4."
-  },
 
   //*/
 ]

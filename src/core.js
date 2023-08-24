@@ -43,7 +43,7 @@ const Parser = exports.Parser = proto(function() {
       context = arguments[0]
     } else {
       const input = arguments[0]
-      context = Context(input, /*index */ 0)
+      context = Context(input, /*index */ 0, new Map(), InputInfoCache(input))
       if(this.shouldDebug) {
         context.initDebug()
       }
@@ -185,7 +185,23 @@ const Parser = exports.Parser = proto(function() {
       return result
     }))
   }
-
+  
+  this.isolateFromDebugRecord = function() {
+    const parser = this
+    return hideFromDebug(Parser(this.name, function() {
+      this.isolateFromDebugRecord = true
+      return this.parse(parser, this)
+    }))
+  }
+  
+  this.deisolateFromDebugRecord = function() {
+    const parser = this
+    return hideFromDebug(Parser(this.name, function() {
+      delete this.isolateFromDebugRecord
+      return this.parse(parser, this)
+    }))
+  }
+  
   this.value = function(valueMapper) {
     const parser = this
     return hideFromDebug(Parser(this.name, function() {
@@ -236,19 +252,17 @@ const Context = proto(function() {
     ;[this.input, // The string source being parsed.
       this.index, // The current index the parser is at in the input.
       this._state,  // A Map of named values set by parsers.
-      this.debug // If true, the context creates debug records.
+      this.inputInfoCache, // An InputInfoCache
+      this.debug, // If true, the context creates debug records.
+      this.isolateFromDebugRecord // If set to true, all inner parsers will be hidden from the record.
     ] = arguments
-
-    if(this._state === undefined) {
-      this._state = new Map()
-    }
   }
 
   this.move = function(index) {
     if(index < this.index) {
       throw new Error("Parser attempted to move an index backward to index: "+index+" from index"+this.index+".")
     }
-    const newContext = Context(this.input, index, new Map(this._state), this.debug)
+    const newContext = Context(this.input, index, new Map(this._state), this.inputInfoCache, this.debug, this.isolateFromDebugRecord)
     if(this.debug) {
       newContext.debugRecord = this.debugRecord
     }
@@ -327,7 +341,7 @@ const Context = proto(function() {
     this.curDebugSection.name = name
     this.curDebugSection.startIndex = startIndex
     this.curDebugSection.startState = new Map(startState)
-    if (hideFromDebugRecord) {
+    if (hideFromDebugRecord || this.isolateFromDebugRecord) {
       this.curDebugSection.hideFromDebugRecord = true
     }
   }
@@ -351,3 +365,51 @@ const hideFromDebug = exports.hideFromDebug = function(parser) {
   parser.hideFromDebugRecord = true
   return parser
 }
+
+
+const InputInfoCache = exports.InputInfoCache = proto(function LineCache() {
+  this.init = function(input) {
+    this.input = input
+    this.initialized = false
+  }
+  
+  this.initialize = function() {
+    if (!this.initialized) {
+      // A map of 1-based line to the first character index in that line.
+      this.lineCache = {1: 0}
+      
+      let line = 1
+      for (let index=0; index<this.input.length; index++) {
+        const char = this.input[index]
+        if (char === '\n') {
+          line++
+          this.lineCache[line] = index+1
+        }
+      }
+      
+      this.lines = line
+      this.initialized = true
+    }
+  }
+  
+  // Returns the start index at line.
+  this.getLineIndex = function(line) {
+    return this.lineCache[line]
+  }
+  
+  this.get = function(index) {
+    if(index < 0 || this.input.length < index) {
+      throw new Error("Asking for info about an index not contained in the target string: "+index+'.')
+    }
+    
+    let lastLine
+    for (let line=1; line<=this.lines; line++) {
+      lastLine = line
+      const startIndex = this.lineCache[line]
+      if (startIndex > index) {
+        return {line: line-1, column: 1 + index - this.lineCache[line-1]} 
+      }
+    }
+    return {line: lastLine, column: 1 + index - this.lineCache[lastLine]} 
+  }
+})

@@ -23,6 +23,10 @@
 
 **`parser.isolate(mapper)`** - Ensures any `Context` state mutated by `parser` is not propagated outside that parser.
 
+**`parser.isolateFromDebugRecord()`** - Marks the debug records for everything within the parser as hidden. They will not be displayed by `displayResult`.
+
+**`parser.deisolateFromDebugRecord()`** - Marks the debug records for everything within the parser as NOT hidden. Useful for undoing `isolateFromDebugRecord` for a subset of things within a parser for more targetted debugging output.
+
 * `mapper(isolatedState, nextState)` - An optional function that give an opportunity to copy over select state values into the `nextState` to be propagated forward.   
 
 **`parser.debug(shouldDebug=true)`** - Sets whether or not this `Parser` is in debug mode. The parser creates a debug record when in debug mode. See below for how debug mode affects the `ParseResult` and see `parser.parse` for how it affects parsing. 

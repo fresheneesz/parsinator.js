@@ -1,17 +1,28 @@
 // See ../docs/lazy.js for documentation.
 
-const {Parser} = require("./core")
+const {Parser, hideFromDebug} = require("./core")
+const {name} = require('./basicParsers')
 
-function lazy(name, getParser) {
-  if(!(getParser instanceof Function)) {
-    throw new Error("Something other than a function passed as the second argument to `lazy`.")
+function lazy(/*[nameInput,] getParser*/) {
+  if (arguments.length === 1) {
+    var getParser = arguments[0]
+  } else {
+    var nameInput = arguments[0]
+    var getParser = arguments[1]
   }
+  if(!(getParser instanceof Function)) {
+    throw new Error("Something other than a function passed as the `getParser` argument to `lazy`.")
+  }
+  
   return function() {
     const args = arguments
-    return Parser(name, function() {
-      const parser = getParser.apply(this, args)
+    return hideFromDebug(Parser('lazy', function() {
+      let parser = getParser.apply(this, args)
+      if (nameInput !== undefined) {
+        parser = name(nameInput, parser)
+      }
       return this.parse(parser, this)
-    })
+    }))
   }
 }
 

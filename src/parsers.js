@@ -257,9 +257,14 @@ exports.node = function(parser) {
   maybeInvalidParserException('node('+parser.name+')', parser)
   parser = getPossibleParser(parser)
   return hideFromDebug(Parser(parser.name, function() {
+    this.inputInfoCache.initialize()
     const start = this.index
     const transformedParser = parser.value(function(value) {
-      return {value, start, end:this.index}
+      return {
+        value, 
+        start: {index: start, ...this.inputInfoCache.get(start)}, 
+        end: {index: this.index, ...this.inputInfoCache.get(this.index)}
+      }
     })
     return this.parse(transformedParser, this)
   }))

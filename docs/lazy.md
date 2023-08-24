@@ -2,9 +2,9 @@
 
 These functions are useful for creating recursive parsers. I recommend using these for all your parsers, so that you avoid running into surprising bugs as you build your parser. See [examples/recusionDemo.js](../examples/recursionDemo.js) for an example of recursive parsers using the below functions.
 
-**`lazy(name, parser) `**  - Turns a parser combinator into a lazy form where the function is called only when needed. This also allows accessing the current Context (including the state).
+**`lazy([name,] parser) `**  - Turns a parser combinator into a lazy form where the function is called only when needed. This also allows accessing the current Context (including the state).
 
-* `name` - A name for the parser (used for debug purposes).
+* `name` - An optional name for the parser (used for debug purposes). If you want to name the parser something dynamic, remove this name and use the `name` parser.
 * `parserCombinator` - A function that returns a `Parser`. Will receive the same arguments the return value of lazy is called with. Will also get a Context object as its `this`.
 
 **`lazyParsers(parsersMap)`** - Wraps each parser function so that it can properly recurse, and ensures that each parser gets a debug name.

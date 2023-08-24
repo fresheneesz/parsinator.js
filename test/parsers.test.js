@@ -31,6 +31,7 @@ module.exports = [
 
 
   
+  
   //*
 
   // eof
@@ -239,7 +240,12 @@ module.exports = [
 
   // node
   {name: 'node', parser: node('a'), input: "a", result: {
-    ok: true, value: {value: 'a', start: 0, end: 1}, context:{index:1}
+    ok: true, value: {value: 'a', start: {index: 0, line: 1, column: 1}, end: {index: 1, line: 1, column: 2}}, context:{index:1}
+  }},
+  {name: 'node', parser: ser('a\n', node('b')), input: "a\nb", result: {
+    ok: true, 
+    value: ['a\n', {value: 'b', start: {index: 2, line: 2, column: 1}, end: {index: 3, line: 2, column: 2}}], 
+    context:{index:3}
   }},
   {name: 'node fail', parser: node('a'), input: "b", result: {
     ok: false, expected: new Set(['a']), context:{index:0}
