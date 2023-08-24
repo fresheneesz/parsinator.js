@@ -189,7 +189,7 @@ function displayDebugRecord(indent, record, options) {
         }
       }
   
-      outputText.push(gray(intentString)+color(limitNameLength(15, record.name)+": "+matchedString+stateString))
+      outputText.push(gray(intentString)+color(limitNameLength(30, record.name)+": "+matchedString+stateString))
     }
     
     if(record.subRecords) for(let n=0; n<record.subRecords.length; n++) {

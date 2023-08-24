@@ -17,7 +17,7 @@
     "functional",
     "composable"
   ],
-  "version": "1.5.2",
+  "version": "1.5.3",
   "dependencies": {
     "proto": "1.0.17",
     "colors": "",
