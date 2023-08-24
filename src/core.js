@@ -191,10 +191,11 @@ const Parser = exports.Parser = proto(function() {
     return hideFromDebug(Parser(this.name, function() {
       const isolateFromDebugRecord = this.isolateFromDebugRecord
       this.isolateFromDebugRecord = true
-      return this.parse(parser.value(function() {
+      return this.parse(parser.value(function(v) {
         if (!isolateFromDebugRecord) {
           delete this.isolateFromDebugRecord 
         }
+        return v
       }), this)
     }))
   }
@@ -204,10 +205,11 @@ const Parser = exports.Parser = proto(function() {
     return hideFromDebug(Parser(this.name, function() {
       const isolateFromDebugRecord = this.isolateFromDebugRecord
       this.isolateFromDebugRecord = false
-      return this.parse(parser.value(function() {
+      return this.parse(parser.value(function(v) {
         if (isolateFromDebugRecord) {
           this.isolateFromDebugRecord = true 
         }
+        return v
       }), this)
     }))
   }

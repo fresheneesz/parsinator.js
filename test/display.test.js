@@ -162,15 +162,17 @@ module.exports = [
   ]},
   
   {name: 'displayDebugInfo isolateFromDebugRecord continuation bug', run: function(){
-    const simpleParser = ser(alt('a', 'b').isolateFromDebugRecord(), 'c')
-    const result = simpleParser.debug().parse("abc")
+    const simpleParser = ser(alt('a', 'b').isolateFromDebugRecord(), 'c').join()
+    const result = simpleParser.debug().parse("ac")
 
     return [
+      result.value, // Also test that the value is actually returned.
       displayDebugInfo(result, {colors: false})
     ]
   }, result: [
-    'ser(alt("a", "b"), "c"): [1:1] failed "abc"\n'+
-    ' "c": [1:2] failed "bc"'
+    'ac',
+    'ser(alt("a", "b"), "c"): [1:1] matched "ac"\n'+
+    ' "c": [1:2] matched "c"'
   ]},
 
   {name: 'displayDebugInfo infinite recursion', run: function(){
