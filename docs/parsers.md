@@ -39,7 +39,7 @@ There are no exported parser functions for string and regex parsers, so just use
 
 **`desc(expectedName, parser)`** - This sets a name to describe the parser for use as an `expected` value. Will override the `expected` values of the passed parser in the case it fails to `[expectedName`].
 
-**`node(parser)`** - Transforms the `value` returned by the parser into `{value, start, end}`, where `start` is the starting index and `end` is the ending index ([example](../docs/nodeDemo.md)). Useful for error reporting, stack traces, source mapping, etc. 
+**`node(parser)`** - Transforms the `value` returned by the parser into `{value, start, end}`, where `start` is the starting point and `end` is the ending point ([example](../docs/nodeDemo.md)), each of which have the form `{index, line, column}` where `index` is 0-based and `line` and `column` are 1-based. Useful for error reporting, stack traces, source mapping, etc. 
 
 **`name(name, parser)`** - Pass through parser that simply renames the parser. Mostly useful for debugging.
 
