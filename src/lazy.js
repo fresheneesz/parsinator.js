@@ -16,7 +16,7 @@ function lazy(/*[nameInput,] getParser*/) {
   
   return function() {
     const args = arguments
-    return hideFromDebug(Parser('lazy', function() {
+    return hideFromDebug(Parser(nameInput || 'lazy', function() {
       let parser = getParser.apply(this, args)
       if (nameInput !== undefined) {
         parser = name(nameInput, parser)
