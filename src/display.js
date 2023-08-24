@@ -127,7 +127,7 @@ function displayError(result, options) {
 
 const displayDebugInfo = exports.displayDebugInfo = function(result, options) {
   const debugRecord = result.context.debugRecord
-  return displayDebugRecord(0, debugRecord, options)
+  return displayDebugRecord(0, debugRecord, options).join('\n')
 }
 
 function displayDebugRecord(indent, record, options) {
@@ -147,7 +147,7 @@ function displayDebugRecord(indent, record, options) {
     green = red = gray = cyan = (x => x) // noop
   }
 
-  const outputText = []
+  let outputText = []
   if(record.result) {
     if (!record.hideFromDebugRecord) {
       const context = record.result.context
@@ -199,7 +199,7 @@ function displayDebugRecord(indent, record, options) {
       try {
         const nextIndent = record.hideFromDebugRecord ? indent : indent + 1
         if(nextIndent < options.maxSubrecordDepth) {
-          outputText.push(displayDebugRecord(nextIndent, subRecord, options))
+          outputText = outputText.concat(displayDebugRecord(nextIndent, subRecord, options))
         } else {
           outputText.push(color("Couldn't print more results, because the maxSubrecordDepth of "+options.maxSubrecordDepth+" was exceeded."))
           break
@@ -213,7 +213,7 @@ function displayDebugRecord(indent, record, options) {
       }
     }
   }
-  return outputText.join('\n')
+  return outputText
 
   // Returns a string that displays the give maps.
   // startState - A Map.

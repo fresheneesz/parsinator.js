@@ -145,7 +145,18 @@ module.exports = [
   }, result: [
     'many(alt(ser...: [1:1] matched ""\n' +
     ' ser("a", "b"): [1:1] failed "\\n}]"\n' +
-    '  "a": [1:1] failed "\\n}]"\n' 
+    '  "a": [1:1] failed "\\n}]"' 
+  ]},
+  
+  {name: 'displayDebugInfo isolateFromDebugRecord newline bug', run: function(){
+    const simpleParser = many(ser(alt(ser('a', 'b'), 'c')).isolateFromDebugRecord())
+    const result = simpleParser.debug().parse("\n}]")
+
+    return [
+      displayDebugInfo(result, {colors: false})
+    ]
+  }, result: [
+    'many(alt(ser...: [1:1] matched ""'
   ]},
 
   {name: 'displayDebugInfo infinite recursion', run: function(){
